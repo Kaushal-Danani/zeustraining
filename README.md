@@ -25,7 +25,6 @@
 
 ## 2. CSS Task
 
-
 ### Explain the different ways in which CSS can be applied to HTML
 There are 3 different ways in which CSS can be applied to HTML.
 1. Inline CSS
@@ -52,7 +51,6 @@ There are 3 different ways in which CSS can be applied to HTML.
 ```
 
 ### what is the preferred way and why?
-
 External CSS is the preferred way beacuse it keeps styling separate from content, makes code reusable across pages and improves maintainability.
 
 ### What are different CSS selectors, with example explain Element, Class and Id selectors.
@@ -112,5 +110,4 @@ Targets a single unique element with an ID.
 ```
 
 ###  what is the preferred way?
-
 External JavaScript is best for keeping logic separate, cleaner code organization, and better performance (caching).
