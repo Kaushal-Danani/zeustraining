@@ -5,12 +5,12 @@
 }
 
 @font-face {
-  font-family: Roboto-bold;
-  src: url("./fonts/Roboto/static/Roboto-Bold.ttf");
+  font-family: "Roboto-bold";
+  src: url("./fonts/Roboto/roboto-v48-latin-900.woff2") format(".woff2");
 }
 @font-face {
-  font-family: Roboto-regular;
-  src: url("./fonts/Roboto/Roboto-Regular.ttf");
+  font-family: "Roboto-regular";
+  src: url("./fonts/Roboto/Roboto-regular.woff2") format(".woff2");
 }
 body {
   display: flex;
@@ -35,13 +35,13 @@ body {
 }
 
 .username {
-  font-family: Roboto-bold, sans-serif;
+  font-family: "Roboto-bold", sans-serif;
 }
 
 .profile-bio {
   padding: 0.6rem 0rem 0 0;
   font-size: large;
-  font-family: Roboto-regular, sans-serif;
+  font-family: "Roboto-regular", sans-serif;
 }
 
 .profile-actions {
@@ -51,14 +51,14 @@ body {
   color: #8D9199;
   font-size: 0.9rem;
   font-weight: 700;
-  font-family: Roboto-bold, sans-serif;
+  font-family: "Roboto-bold", sans-serif;
 }
 
 .action-container {
   display: flex;
-  gap: 0.72rem;
   justify-content: center;
   align-items: center;
+  gap: 0.72rem;
 }
 
 /*# sourceMappingURL=style.css.map */
