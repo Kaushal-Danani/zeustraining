@@ -1,0 +1,64 @@
+* {
+  margin: 0%;
+  padding: 0%;
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: Roboto-bold;
+  src: url("./fonts/Roboto/static/Roboto-Bold.ttf");
+}
+@font-face {
+  font-family: Roboto-regular;
+  src: url("./fonts/Roboto/Roboto-Regular.ttf");
+}
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: #0E0E0E;
+  font: optional;
+  font-family: sans-serif;
+}
+
+.twitter-profile {
+  display: flex;
+  padding: 16px 8px 5px 5px;
+  border: 1px solid black;
+  background-color: white;
+}
+
+.profile-details {
+  padding: 1rem 1rem 0rem 1.1rem;
+}
+
+.username {
+  font-family: Roboto-bold, sans-serif;
+}
+
+.profile-bio {
+  padding: 0.6rem 0rem 0 0;
+  font-size: large;
+  font-family: Roboto-regular, sans-serif;
+}
+
+.profile-actions {
+  padding-top: 0.9rem;
+  display: flex;
+  gap: 1.5rem;
+  color: #8D9199;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: Roboto-bold, sans-serif;
+}
+
+.action-container {
+  display: flex;
+  gap: 0.72rem;
+  justify-content: center;
+  align-items: center;
+}
+
+/*# sourceMappingURL=style.css.map */

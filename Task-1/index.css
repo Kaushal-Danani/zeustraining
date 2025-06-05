@@ -18,13 +18,14 @@ body {
 
 .sub-heading {
     margin-top: 0%;
-    padding: 0 0 0 0.9rem;
+    padding: 0 0 0 1rem;
     color: whitesmoke;
     background-color: #009900;
 }
 
 .subline {
     text-transform: uppercase;
+    font-style: italic;
 }
 
 .list-order {
@@ -33,12 +34,16 @@ body {
 }
 
 .zeus-weblink {
-    text-decoration: none;
     color: #f816c7;
+    margin-bottom: 1rem;
+}
+
+.weblink {
+    text-decoration: none;
 }
 
 .google-thumbnail {
-    width: 275px;
+    width: 235px;
     height: 120px;
     display: flex;
     align-items: center;
@@ -73,6 +78,10 @@ input {
     margin-bottom: 1rem;
     background-color: white;
 }
+#name::placeholder {
+    color: black;
+}
+
 textarea {
     background-color: white;
     overflow-y: scroll;
