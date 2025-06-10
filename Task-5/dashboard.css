@@ -194,6 +194,7 @@ select {
 }
 .sort-select-field label {
     font-size: 12px;
+    color: #686868;
 }
 
 .horizontal-separation {
@@ -233,6 +234,9 @@ select {
     display: flex;
     justify-content: space-between;
     width: 100%;
+}
+.course-information .title img {
+    align-items: baseline;
 }
 
 .related-subject {
