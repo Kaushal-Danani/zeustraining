@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Courses</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="footer.css">
+</head>
+<body>
+    <nav class="navbar">
+        <img class="quantum-logo" src="./icons/logo_used_in_header.svg" alt="Quantum Logo">
+        
+        <ul class="nav-container">
+            <li class="nav-item active" id="#dashboard">Dashboard</li>
+            <li class="nav-item" id="#content">Content</li>
+            <li class="nav-item" id="#users">Users</li>
+            <li class="nav-item" id="#reports">Reports</li>
+            <li class="nav-item" id="#admin">Admin</li>
+            <li class="nav-image-item">
+                <img src="./icons/alerts.svg" alt="Notification Alert">
+                <sapn class="notify-badge">2</sapn>
+            </li>
+            <li class="nav-image-item">
+                <img src="./icons/announcements.svg" alt="Announcements">
+                <span class="notify-badge badge-padding">1</span>
+            </li>
+            <li class="nav-image-item">
+                <img height="32px" width="32px" src="./icons/account_circle.svg" alt="Profile Image">
+                <span class="notify-badge profile-badge">T</span>
+            </li>
+        </ul>
+
+        <button class="hamburger" type="button" aria-label="hamburger" aria-expanded="false">
+            <img src="./icons/hamburger-menu.svg" alt="Hamburger Icon">
+        </button>
+    </nav>
+    <div class="mobile-navbar">
+        <ul class="nav-compact-container">
+            <li class="nav-compact-item active" id="#dashboard-compact">Dashboard</li>
+            <li class="nav-compact-item" id="#content-compact">Content</li>
+            <li class="nav-compact-item" id="#users-compact">Users</li>
+            <li class="nav-compact-item" id="#reports-compact">Reports</li>
+            <li class="nav-compact-item" id="#admin-compact">Admin</li>
+        </ul>
+    </div>
+    <main class="dashboard-container">
+        <div class="action-bar">
+            <ul class="action-bar-container">
+                <li class="action-bar-item active-action-item">
+                    <img width="30px" height="32px" src="./icons/courses.svg" alt="Courses">
+                    <span><strong class="action-number">4</strong>Courses</span>
+                </li>
+                <li class="action-bar-item">
+                    <img width="29px" height="32px" src="./icons/classes.svg" alt="Classes">
+                    <span><strong class="action-number">4</strong> Classes</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sorting-option">
+            <div class="all-courses">
+                Showing 4 of 4 courses
+            </div>
+            <div class="sort-select-field">
+                <div>
+                    <label for="sort-by">Sort By:</label>
+                    <select id="sort-by">
+                        <option value="Course Name">Course Name</option>
+                    </select>
+                </div>
+                <img src="./icons/sort.svg" alt="Sort Arrow">
+            </div>
+        </div>
+        
+        <div class="horizontal-separation"></div>
+
+        <div class="courses-container">
+            <div class="course-card">
+                <div class="course-information">
+                    <div>
+                        <img src="./images/imageMask-1.svg" alt="Course Image">
+                    </div>
+                    <div class="course-details">
+                        <div class="title">
+                            <h4>Acceleration</h4>
+                            <img src="./icons/favourite.svg" alt="Favourite Course">
+                        </div>
+                        <div class="related-subject">
+                            Physics
+                            <div class="separation"></div>
+                            Grade: 7<span>+2</span>
+                        </div>
+                        <div class="units-lessons-topics">
+                            <div> <strong>4</strong> Units </div>
+                            <div> <strong>18</strong> Lessons </div>
+                            <div> <strong>24</strong> Topics </div>
+                        </div>
+                        <div>
+                            <select class="teacher-select">
+                                <option value="Mr. Frank's Class B">Mr. Frank's Class B</option>
+                            </select>
+                        </div>
+                        <div class="enrollment-details">
+                            <div>
+                                <span>50</span> Students
+                            </div>
+                            <div>
+                                21-Jan-2020 - 21-Aug-2020
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="course-action-options">
+                    <img src="./icons/preview.svg" alt="Preview Course">
+                    <img src="./icons/manage course.svg" alt="Manage Course">
+                    <img src="./icons/grade submissions.svg" alt="Grade Submissions">
+                    <img src="./icons/reports.svg" alt="Reports">
+                </div>
+            </div>
+
+            <div class="course-card">
+                <div class="course-information">
+                    <div>
+                        <img src="./images/imageMask-2.svg" alt="Course Image">
+                    </div>
+                    <div class="course-details">
+                        <div class="title">
+                            <h4>Displacement, Velocity and Speed</h4>
+                            <img src="./icons/favourite.svg" alt="Favourite Course">
+                        </div>
+                        <div class="related-subject">
+                            Physics 2
+                            <div class="separation"></div>
+                            Grade: 6<span>+3</span>
+                        </div>
+                        <div class="units-lessons-topics">
+                            <div> <strong>2</strong> Units </div>
+                            <div> <strong>15</strong> Lessons </div>
+                            <div> <strong>20</strong> Topics </div>
+                        </div>
+                        <div>
+                            <select class="teacher-select" id="no-classes">
+                                <option value="">No Classes</option>
+                                <option value="Mr. Frank's Class B">Mr. Frank's Class B</option>
+                            </select>
+                        </div>
+                        <!-- <div class="enrollment-details">
+                            <div>
+                                <span>50</span> Students
+                            </div>
+                            <div>
+                                21-Jan-2020 - 21-Aug-2020
+                            </div>
+                        </div> -->
+                    </div>
+                </div>
+                <div class="course-action-options">
+                    <img src="./icons/preview.svg" alt="Preview Course">
+                    <img class="disable" src="./icons/manage course.svg" alt="Manage Course">
+                    <img class="disable" src="./icons/grade submissions.svg" alt="Grade Submissions">
+                    <img src="./icons/reports.svg" alt="Reports">
+                </div>
+            </div>
+
+            <div class="course-card">
+                <div class="course-information">
+                    <div>
+                        <img src="./images/imageMask.svg" alt="Course Image">
+                    </div>
+                    <div class="course-details">
+                        <div class="title">
+                            <h4>Introduction to Biology: Micro organisms and how they affec...</h4>
+                            <img src="./icons/favourite.svg" alt="Favourite Course">
+                        </div>
+                        <div class="related-subject">
+                            Biology
+                            <div class="separation"></div>
+                            Grade: 4<span>+1</span>
+                        </div>
+                        <div class="units-lessons-topics">
+                            <div> <strong>5</strong> Units </div>
+                            <div> <strong>16</strong> Lessons </div>
+                            <div> <strong>22</strong> Topics </div>
+                        </div>
+                        <div>
+                            <select class="teacher-select">
+                                <option value="All Classes">All Classes</option>
+                            </select>
+                        </div>
+                        <div class="enrollment-details">
+                            <div>
+                                <span>300</span> Students
+                            </div>
+                            <!-- <div>
+                                21-Jan-2020 - 21-Aug-2020
+                            </div> -->
+                        </div>
+                    </div>
+                </div>
+                <div class="course-action-options">
+                    <img src="./icons/preview.svg" alt="Preview Course">
+                    <img class="disable" src="./icons/manage course.svg" alt="Manage Course">
+                    <img class="disable" src="./icons/grade submissions.svg" alt="Grade Submissions">
+                    <img src="./icons/reports.svg" alt="Reports">
+                </div>
+            </div>
+
+            <div class="course-card expired-course">
+                <div class="expired-tag">
+                    EXPIRED
+                </div>
+                <div class="course-information">
+                    <div>
+                        <img src="./images/imageMask-3.svg" alt="Course Image">
+                    </div>
+                    <div class="course-details">
+                        <div class="title">
+                            <h4>Introduction to High School Mathematics</h4>
+                        </div>
+                        <div class="related-subject">
+                            Mathematics
+                            <div class="separation"></div>
+                            Grade: 8<span>+2</span>
+                        </div>
+                        <!-- <div class="units-lessons-topics">
+                            <div> <strong>4</strong> Units </div>
+                            <div> <strong>18</strong> Lessons </div>
+                            <div> <strong>24</strong> Topics </div>
+                        </div> -->
+                        <div>
+                            <select class="teacher-select">
+                                <option value="Mr. Frank's Class A">Mr. Frank's Class A</option>
+                            </select>
+                        </div>
+                        <div class="enrollment-details">
+                            <div>
+                                <span>44</span> Students
+                            </div>
+                            <div>
+                                14-Oct-2019 - 20-Oct-2020
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="course-action-options">
+                    <img src="./icons/preview.svg" alt="Preview Course">
+                    <img src="./icons/manage course.svg" alt="Manage Course">
+                    <img src="./icons/grade submissions.svg" alt="Grade Submissions">
+                    <img src="./icons/reports.svg" alt="Reports">
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="footer-container">
+        <div class="footer-options">
+            <div>About</div>
+            <div class="separation"></div>
+            <div>Contact Us</div>
+        </div>
+        <div class="footer">
+            <img src="./icons/logo_used_in_footer.svg" alt="Quantum Logo">
+            <div class="divider"></div>
+            <p>Copyright ©2020-2021 <strong class="company-name">zeus system Pvt. Ltd</strong> All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="./javascript.js"></script>
+</body>
+</html>
