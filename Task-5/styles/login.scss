@@ -1,0 +1,200 @@
+@import "_fonts";
+@import "_footer";
+@import "_base";
+
+@mixin flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@mixin display-column($direction) {
+    display: flex;
+    flex-direction: $direction;
+}
+
+body {
+    @include display-column(column);
+}
+
+.quantum-logo {
+    padding: 0.65rem 0rem 0.65rem 1.25rem;
+}
+
+.header-logo {
+    width: 100%;
+    height: 58px;
+    background: url('../images/header_pattern_svg.svg') #25313f;
+    background-size: cover;
+    background-repeat: no-repeat;
+    border-bottom: 2px solid #31B9E4;
+    mix-blend-mode: overlay;
+    filter: saturate(700%);
+}
+
+.login-container {
+    flex: 1;
+    @include flex-center();
+    flex-direction: column;
+    background-color: #EEEEEE;
+}
+
+.top-border {
+    height: 4px;
+    width: 490px;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    background-color: #3AC7EC;
+}
+
+.login-box {
+    width: 488px;
+    height: 550px;
+    background-color: #fff;
+    border: 1px solid #FFFFFF;
+}
+
+.form-header {
+    position: relative;
+    display: flex;
+    margin-top: 20px;
+}
+.back-svg {
+    margin-left: 32px;
+    cursor: pointer;
+}
+.header-text {
+    margin: 0;
+    margin-left: 77px;
+    font-weight: 500;
+    font-family: Quicksand-SemiBold;
+}
+
+.form-details {
+    padding: 0px 32px;
+}
+.radio-groups {
+    margin-top: 34px;
+    display: flex;
+    gap: 32px;
+}
+.radio-form {
+    display: inline-flex;
+    align-items: center;
+}
+.radio-label {
+    padding-left: 8px;
+    font-family: Quicksand-SemiBold;
+}
+input[type="radio"] {
+    width: 20px;
+    height: 24px;
+    accent-color: $primary-color-green;
+}
+
+.dropdown-groups{
+    @include display-column(column);
+    gap: 36px;
+    margin-top: 23px;
+}
+.select-groups {
+    @include display-column(column);
+    font-family: Quicksand-SemiBold;
+}
+.select-label {
+    font-size: 12px;
+    color: #666666;
+}
+
+select {
+    margin-top: 5px;
+    height: 20px;
+    font-size: 16px;
+    font-family: Quicksand-SemiBold;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 1px solid #0000001b;
+    -webkit-appearance: none;
+    background-image: url('../icons/arrow-down.svg');
+    background-repeat: no-repeat;
+    background-position-x: 100%;    
+}
+
+
+.input-groups {
+    margin-top: 56px;
+    @include display-column(column);
+    gap: 33px;
+}
+.input-field-container {
+    & input {
+        border: none;
+        width: 100%;
+        outline: none;
+        font-size: 16px;
+        height: 20px;
+        padding-bottom: 5px;
+        font-family: Quicksand-SemiBold;
+        border-bottom: 1px solid #0000001b;
+    }
+
+    & #password {
+        -webkit-appearance: none;
+        background-image: url('../icons/preview.svg');
+        background-repeat: no-repeat;
+        background-position-x: 100%;
+        background-position-y: 0px;
+    }
+}
+
+.forgot-text {
+    text-align: end;
+    text-transform: uppercase;
+    margin-top: 5px;
+    font-size: 14px;
+    color: $primary-color-green;
+    font-family: Quicksand-SemiBold;
+}
+
+input[type="checkbox"] {
+    height: 24px;
+    width: 18px;
+    accent-color: $primary-color-green;
+}
+.remember-me-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: Quicksand-SemiBold;
+
+    & label {
+        cursor: pointer;
+    }
+
+    & #remember-me {
+        cursor: pointer;
+    }
+}
+
+
+.button-container {
+    height: 78px;
+    width: 100%;
+    @include flex-center();
+
+    & .submit-button {
+        cursor: pointer;
+        height: 40px;
+        width: 215.51px;
+        font-size: 14px;
+        text-transform: uppercase;
+        border: none;
+        background-color: #3FD28B;
+        box-shadow: 0px 3px 5px #0000003D;
+    }
+}
+
+.company-name {
+    font-family: Quicksand-Bold;
+}
