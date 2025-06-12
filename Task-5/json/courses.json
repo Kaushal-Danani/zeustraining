@@ -1,0 +1,79 @@
+[
+    {
+        "image": "./images/imageMask-1.svg",
+        "title": "Acceleration",
+        "favouriteIcon": "./icons/favourite.svg",
+        "subject": "Physics",
+        "grade": 7,
+        "additionalGrade": 2,
+        "units": 4,
+        "lessons": 18,
+        "topics": 24,
+        "teacherClasses": ["Mr. Frank's Class B"],
+        "enrollStudents": 50,
+        "startDate": "21-Jan-2020",
+        "endDate": "21-Aug-2020",
+        "icons": {
+            "preview": true,
+            "manageCourse": true,
+            "gradeSubmission": true,
+            "reports": true
+        }
+    },
+    {
+        "image": "./images/imageMask-2.svg",
+        "title": "Displacement, Velocity and Speed",
+        "favouriteIcon": "./icons/favourite.svg",
+        "subject": "Physics 2",
+        "grade": 6,
+        "additionalGrade": 3,
+        "units": 2,
+        "lessons": 15,
+        "topics": 20,
+        "teacherClasses": ["No Classes", "Mr. Frank's Class B"],
+        "icons": {
+            "preview": true,
+            "manageCourse": false,
+            "gradeSubmission": false,
+            "reports": true
+        }
+    },
+    {
+        "image": "./images/imageMask.svg",
+        "title": "Introduction to Biology: Micro organisms and how they affec...",
+        "favouriteIcon": "./icons/favourite.svg",
+        "subject": "Biology",
+        "grade": 4,
+        "additionalGrade": 1,
+        "units": 5,
+        "lessons": 16,
+        "topics": 22,
+        "teacherClasses": ["All Classes"],
+        "enrollStudents": 300,
+        "icons": {
+            "preview": true,
+            "manageCourse": false,
+            "gradeSubmission": false,
+            "reports": true
+        }
+    },
+    {
+        "expired": true,
+        "image": "./images/imageMask-3.svg",
+        "title": "Introduction to High School Mathematics",
+        "favouriteIcon": "./icons/star.svg",
+        "subject": "Mathematics",
+        "grade": 8,
+        "additionalGrade": 2,
+        "teacherClasses": ["Mr. Frank's Class A"],
+        "enrollStudents": 44,
+        "startDate": "14-Oct-2019",
+        "endDate": "20-Oct-2020",
+        "icons": {
+            "preview": true,
+            "manageCourse": true,
+            "gradeSubmission": true,
+            "reports": true
+        }
+    }
+]

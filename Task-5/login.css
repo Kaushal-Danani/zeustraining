@@ -63,14 +63,16 @@ body {
 .form-header {
     position: relative;
     display: flex;
+    padding: 0 32px;
     margin-top: 20px;
 }
 .back-svg {
-    margin-left: 32px;
+    margin-left: 0px;
 }
 .header-text {
-    margin: 0;
-    margin-left: 77px;
+    width: 100%;
+    text-align: center;
+    margin: 0%;
     font-weight: 500;
     font-family: Quicksand-SemiBold;
 }

@@ -1,0 +1,55 @@
+[
+    {
+        "diffrentBackground": false,
+        "senderName": "Wilson Kumar",
+        "operation": "check-announcement.svg",
+        "information": "No classes will be held on 21st Nov",
+        "attechedFileInfo": "2 files are attached",
+        "date": "15-Sep-2018",
+        "time": "07:21 pm"
+    },
+    {
+        "diffrentBackground": true,
+        "senderName": "Samson White",
+        "operation": "remove-announcement.svg",
+        "information": "Guest lecture on Geometry on 20th September",
+        "attechedFileInfo": "2 files are attached",
+        "date": "15-Sep-2018",
+        "time": "07:21 pm"
+    },
+    {
+        "diffrentBackground": false,
+        "senderName": "Wilson Kumar",
+        "operation": "check-announcement.svg",
+        "information": "Additional course materials available on request",
+        "course": "Mathematics 101",
+        "date": "15-Sep-2018",
+        "time": "07:21 pm"
+    },
+    {
+        "diffrentBackground": true,
+        "senderName": "Wilson Kumar",
+        "operation": "remove-announcement.svg",
+        "information": "No classes will be held on 25th Dec",
+        "date": "15-Sep-2018",
+        "time": "07:21 pm"
+    },
+    {
+        "diffrentBackground": false,
+        "senderName": "Wilson Kumar",
+        "operation": "check-announcement.svg",
+        "information": "Additional course materials available on request",
+        "course": "Mathematics 101",
+        "date": "15-Sep-2018",
+        "time": "07:21 pm"
+    },
+    {
+        "diffrentBackground": false,
+        "senderName": "Wilson Kumar",
+        "operation": "check-announcement.svg",
+        "information": "Additional course materials available on request",
+        "course": "Mathematics 101",
+        "date": "15-Sep-2018",
+        "time": "07:21 pm"
+    }
+]

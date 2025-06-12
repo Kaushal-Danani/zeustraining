@@ -7,44 +7,259 @@
     <title>Teacher Dashboard - Courses</title>
     <link rel="stylesheet" href="dashboard.css">
     <link rel="stylesheet" href="footer.css">
+
+    <script>
+        (function fetchAnnouncementData() {
+            fetch('./json/announcement.json')
+            .then(response => response.json())
+            .then(data => {
+                addAnnouncement(data);
+            })
+            .catch(error => console.error('Error fetching announcement JSON:', error));
+
+            fetch('./json/notifications.json')
+            .then(response => response.json())
+            .then(data => {
+                addNotifications(data);
+            })
+            .catch(error => console.error('Error fetching notification JSON:', error));
+
+            fetch('./json/courses.json')
+            .then(response => response.json())
+            .then(data => {
+                addCourses(data);
+            })
+            .catch(error => console.error('Error fetching notification JSON:', error));
+        })();
+
+        function addAnnouncement(announcementData) {
+            const announcementRecord = announcementData.map(announcement => { 
+                return `
+                <li class="single-announcement ${announcement.diffrentBackground ? `removed-background` : ``}">
+                        <div class="notification-box">
+                            <div class="from-person-container">
+                                <p>PA: <span>${announcement.senderName}</span></p>
+                                <img height="20px" src="./icons/${announcement.operation}" alt="Check Announcement">
+                            </div>
+                            <p class="announcement-details">${announcement.information}</p>
+                            ${announcement.course ? 
+                                `<p class="course-details">Course: <span>${announcement.course}</span></p>` : ``}
+                            <div class="connected-information">
+                                ${announcement.attechedFileInfo ? 
+                                    `<div class="attached-file-info">
+                                        <img width="15px" height="15px" src="./icons/attachment.svg" alt="File attached">
+                                        <p>${announcement.attechedFileInfo}</p>
+                                    </div>`: ''}
+                                <time>${announcement.date} at ${announcement.time}</time>
+                            </div>
+                        </div>
+                        <div class="horizontal-separation"></div>
+                </li>`}).join('');
+
+                const announcementBlocks = document.querySelector('.announcements-blocks');
+                announcementBlocks.innerHTML = announcementRecord;
+            };
+
+            function addNotifications(notificationData) {
+                const notificationRecord = notificationData.map(notification => { 
+                    return `
+                    <li class="single-notification ${notification.diffrentBackground ? `removed-background` : ``}">
+                            <div class="notification-box">
+                                <div class="notification-details">
+                                    <p>${notification.content}</p>
+                                    <img height="20px" src="./icons/${notification.operation}" alt="Check notification">
+                                </div>
+                                ${notification.course ? 
+                                    `<p class="course-details">Course: <span>${notification.course}</span></p>` : ``}
+                                <div class="connected-information">
+                                    <time>${notification.date} at ${notification.time}</time>
+                                </div>
+                            </div>
+                            <div class="horizontal-separation"></div>
+                    </li>`}).join('');
+
+                const notificationBlocks = document.querySelector('.notifications-blocks');
+                notificationBlocks.innerHTML = notificationRecord;
+            };
+
+            function addCourses(courseData) {
+
+                const coursesRecord = courseData.map(course => {
+                    const expiredClass = course.expired ? 'expired-course' : '';
+                    const expiredTag = course.expired ? '<div class="expired-tag">EXPIRED</div>' : '';
+
+                    return `
+                    <div class="course-card ${expiredClass}">
+                        ${expiredTag}
+                        <div class="course-information">
+                            <div>
+                                <img src="${course.image}" alt="Course Image">
+                            </div>
+                            <div class="course-details">
+                                <div class="title">
+                                    <h4>${course.title}</h4>
+                                    <img width="20px" height="24px" src="${course.favouriteIcon}" alt="Favourite Course">
+                                </div>
+                                <div class="related-subject">
+                                    ${course.subject}
+                                    <div class="separation"></div>
+                                    Grade: ${course.grade}<span>+${course.additionalGrade}</span>
+                                </div>
+                                ${course.units && course.lessons && course.topics ?
+                                `<div class="units-lessons-topics">
+                                    <div> <strong>${course.units}</strong> Units </div>
+                                    <div> <strong>${course.lessons}</strong> Lessons </div>
+                                    <div> <strong>${course.topics}</strong> Topics </div>
+                                </div>` : '' }
+                                <div>
+                                    <select class="teacher-select" ${course.teacherClasses.includes("No Classes") ? `id="no-classes"` : ``}>
+                                        ${course.teacherClasses.map(teacherClass => 
+                                            `<option value="${teacherClass}">${teacherClass}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="enrollment-details">
+                                    ${course.enrollStudents ?
+                                    `<div>
+                                        <span>${course.enrollStudents}</span> Students
+                                    </div>`
+                                    : ''}
+                                    ${course.startDate && course.endDate ?
+                                    `<div class="vertical-separation"></div>
+                                    <div>
+                                        ${course.startDate} - ${course.endDate}
+                                    </div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="course-action-options">
+                            <img ${course.icons.preview ? `` : `class="disable"`} src="./icons/preview.svg" alt="Preview Course">
+                            <img ${course.icons.manageCourse ? `` : `class="disable"`} src="./icons/manage course.svg" alt="Manage Course">
+                            <img ${course.icons.gradeSubmission ? `` : `class="disable"`} src="./icons/grade submissions.svg" alt="Grade Submissions">
+                            <img ${course.icons.reports ? `` : `class="disable"`} src="./icons/reports.svg" alt="Reports">
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+
+                const coursesContainer = document.querySelector('.courses-container');
+                coursesContainer.innerHTML = coursesRecord;
+            }
+    </script>
 </head>
 <body>
-    <nav class="navbar">
-        <img class="quantum-logo" src="./icons/logo_used_in_header.svg" alt="Quantum Logo">
+    <header class="header">
+        <nav class="navbar">
+            <img class="quantum-logo" src="./icons/logo_used_in_header.svg" alt="Quantum Logo">
+            
+            <ul class="nav-container">
+                <li class="nav-item active" id="#dashboard">Dashboard</li>
+                <li class="nav-item" id="#content">Content</li>
+                <li class="nav-item" id="#users">Users</li>
+                <li class="nav-item" id="#reports">Reports</li>
+                <li class="nav-item" id="#admin">Admin</li>
+                <li id="notification" class="nav-image-item"
+                onmouseenter="showHoverMenuWithchangeIcon('notification-containner', 'Path_3675', 'notification-badge')" 
+                onmouseover="showHoverMenuWithchangeIcon('notification-containner', 'Path_3675', 'notification-badge')" 
+                onmouseout="hideHoverMenuByDelay('notification-containner', 'notification','Path_3675', 'notification-badge')">
+                    <svg id="notifications-icon-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                        <path id="Path_3674" data-name="Path 3674" d="M0,0H24V24H0Z" fill="none"/>
+                        <path id="Path_3675" data-name="Path 3675" d="M7.58,4.08,6.15,2.65A10.425,10.425,0,0,0,2.03,10.5h2A8.446,8.446,0,0,1,7.58,4.08ZM19.97,10.5h2a10.489,10.489,0,0,0-4.12-7.85L16.43,4.08A8.5,8.5,0,0,1,19.97,10.5ZM18,11c0-3.07-1.64-5.64-4.5-6.32V4a1.5,1.5,0,0,0-3,0v.68C7.63,5.36,6,7.92,6,11v5L4,18v1H20V18l-2-2ZM12,22a1.752,1.752,0,0,0,.4-.04,2.029,2.029,0,0,0,1.44-1.18,2.008,2.008,0,0,0,.15-.78h-4A2.014,2.014,0,0,0,12,22Z" fill="#3fd28b"/>
+                    </svg>
+                    <sapn id="notification-badge" class="notify-badge">2</sapn>
+                </li>
+                <li id="announcement" class="nav-image-item" 
+                onmouseenter="showHoverMenuWithchangeIcon('announcements-containner', 'announcement-svg-path', 'announcement-badge')" 
+                onmouseover="showHoverMenuWithchangeIcon('announcements-containner', 'announcement-svg-path', 'announcement-badge')" 
+                onmouseout="hideHoverMenuByDelay('announcements-containner', 'announcement','announcement-svg-path', 'announcement-badge')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+                        <path id="announcement-svg-path" data-name="Forma 1" d="M1076.936,181.974a1.242,1.242,0,0,1-.92-.778l-2.513-6.7h-.379a.625.625,0,0,1-.625-.626v-.625h-1.876a.625.625,0,0,1-.625-.625v-3.75a.625.625,0,0,1,.625-.625h1.876v-.626a.625.625,0,0,1,.625-.625h6.228c.217-.01.431-.044.647-.064v7.628c-.214-.021-.427-.054-.642-.064h-1.66l2.1,4.2a1.247,1.247,0,0,1-.229,1.446l-1.5,1.489a1.215,1.215,0,0,1-.879.37A1.25,1.25,0,0,1,1076.936,181.974Zm12.183-2.53c-.019-.009-.033-.025-.052-.036a.6.6,0,0,1-.155-.121c-.006-.007-.015-.01-.021-.016a13.146,13.146,0,0,0-7.642-4.527v-7.988a13.148,13.148,0,0,0,7.642-4.528c.005-.005.013-.006.018-.012a.621.621,0,0,1,.274-.177.461.461,0,0,1,.07-.014.561.561,0,0,1,.122-.025.627.627,0,0,1,.175.035.04.04,0,0,0,.018,0,.042.042,0,0,1,.018,0s.006.006.01.007a.62.62,0,0,1,.262.2.414.414,0,0,1,.04.059.6.6,0,0,1,.1.322v16.249a.6.6,0,0,1-.1.322c-.014.022-.025.039-.04.059a.6.6,0,0,1-.262.2s-.006.006-.01.008a.628.628,0,0,1-.466-.019Z" transform="translate(-1070 -162)" fill="#3fd28b"/>
+                      </svg>
+                    <span id="announcement-badge" class="notify-badge badge-padding">1</span>
+                </li>
+                <li class="nav-image-item">
+                    <div class="profile-image-container">
+                        <img height="32px" width="32px" src="./icons/account_circle.svg" alt="Profile Image">
+                    </div>
+                    <span class="notify-badge profile-badge">T</span>
+                </li>
+            </ul>
+        </nav>
         
-        <ul class="nav-container">
-            <li class="nav-item active" id="#dashboard">Dashboard</li>
-            <li class="nav-item" id="#content">Content</li>
-            <li class="nav-item" id="#users">Users</li>
-            <li class="nav-item" id="#reports">Reports</li>
-            <li class="nav-item" id="#admin">Admin</li>
-            <li class="nav-image-item">
-                <img src="./icons/alerts.svg" alt="Notification Alert">
-                <sapn class="notify-badge">2</sapn>
-            </li>
-            <li class="nav-image-item">
-                <img src="./icons/announcements.svg" alt="Announcements">
-                <span class="notify-badge badge-padding">1</span>
-            </li>
-            <li class="nav-image-item">
-                <img height="32px" width="32px" src="./icons/account_circle.svg" alt="Profile Image">
-                <span class="notify-badge profile-badge">T</span>
-            </li>
-        </ul>
+        <div class="hamburger" onmouseenter="showHoverMenu('mobile-navbar')" onmouseover="showHoverMenu('mobile-navbar')" onmouseout="hideHoverMenu('mobile-navbar')">
+            <svg id="hamburger-menu" xmlns="http://www.w3.org/2000/svg" width="40px" height="36px" viewBox="0 0 27 27">
+                <path id="Path_1833" data-name="Path 1833" d="M0,0H24V24H0Z" fill="none"/>
+                <path id="Path_1834" data-name="Path 1834" d="M3,18H21V16H3Zm0-5H21V11H3ZM3,6V8H21V6Z" fill="#3fd28b"/>
+              </svg>
+            <div id="mobile-navbar" class="mobile-navbar" onmouseover="showHoverMenu('mobile-navbar')" onmouseenter="showHoverMenu('mobile-navbar')" onmouseout="hideHoverMenu('mobile-navbar')">
+                <ul class="nav-compact-container">
+                    <li class="nav-compact-item" id="dashboard-compact">
+                        <div class="nav-dropdown">
+                            <a href="#"> Dashboard </a>
+                        </div>
+                    </li>
+                    <li class="nav-compact-item" id="content-compact" onclick="showSubMenu('#content-compact')">
+                        <div class="nav-dropdown">
+                            <a href="#">CONTENT</a>
+                            <img class="expand-collepse-arrow" src="./icons/expand.svg" alt="Expand Menu">
+                        </div>
+                        <div class="expanded-menu-options">
+                            <a href="#">COURSE CATALOG</a>
+                        </div>
+                    </li>
+                    <li class="nav-compact-item" id="users-compact" onclick="showSubMenu('#users-compact')">
+                        <div class="nav-dropdown">
+                            <a href="#">USERS</a>
+                            <img class="expand-collepse-arrow" src="./icons/expand.svg" alt="Expand Menu">
+                        </div>
+                        <div class="expanded-menu-options">
+                            <a href="#">COURSE CATALOG</a>
+                        </div>
+                    </li>
+                    <li class="nav-compact-item" id="reports-compact" onclick="showSubMenu('#reports-compact')">
+                        <div class="nav-dropdown">
+                            <a href="#">REPORTS</a>
+                            <img class="expand-collepse-arrow" src="./icons/expand.svg" alt="Expand Menu">
+                        </div>
+                        <div class="expanded-menu-options">
+                            <a href="#">COURSE CATALOG</a>
+                        </div>
+                    </li>
+                    <li class="nav-compact-item" id="admin-compact" onclick="showSubMenu('#admin-compact')">
+                        <div class="nav-dropdown">
+                            <a href="#">ADMIN</a>
+                            <img class="expand-collepse-arrow" src="./icons/expand.svg" alt="Expand Menu">
+                        </div>
+                        <div class="expanded-menu-options">
+                            <a href="#">COURSE CATALOG</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
 
-        <button class="hamburger" type="button" aria-label="hamburger" aria-expanded="false">
-            <img src="./icons/hamburger-menu.svg" alt="Hamburger Icon">
-        </button>
-    </nav>
-    <div class="mobile-navbar">
-        <ul class="nav-compact-container">
-            <li class="nav-compact-item active" id="#dashboard-compact">Dashboard</li>
-            <li class="nav-compact-item" id="#content-compact">Content</li>
-            <li class="nav-compact-item" id="#users-compact">Users</li>
-            <li class="nav-compact-item" id="#reports-compact">Reports</li>
-            <li class="nav-compact-item" id="#admin-compact">Admin</li>
-        </ul>
-    </div>
+        <div class="announcements-containner" id="announcements-containner" onmouseover="showHoverMenuWithchangeIcon('announcements-containner', 'announcement-svg-path', 'announcement-badge')" onmouseenter="showHoverMenuWithchangeIcon('announcements-containner', 'announcement-svg-path', 'announcement-badge')" onmouseout="hideHoverMenuWithIconChange('announcements-containner', 'announcement-svg-path', 'announcement-badge')">
+            <ul class="announcements-blocks">
+                <!-- Announcements are shown using JSON data -->
+            </ul>
+            <div class="announcement-btns-container">
+                <button type="button">SHOW ALL</button>
+                <button type="button">CREATE NEW</button>
+            </div>
+        </div>
+
+        <div class="notification-containner" id="notification-containner" 
+        onmouseover="showHoverMenuWithchangeIcon('notification-containner', 'Path_3675', 'notification-badge')" 
+        onmouseenter="showHoverMenuWithchangeIcon('notification-containner', 'Path_3675', 'notification-badge')"
+        onmouseout="hideHoverMenuWithIconChange('notification-containner', 'Path_3675', 'notification-badge')">
+            <ul class="notifications-blocks">
+                <!-- Notifications are shown using JSON data -->
+            </ul>
+            <div class="notification-btns-container">
+                <button type="button">SHOW ALL</buttont>
+            </div>
+        </div>
+    </header>
+
     <main class="dashboard-container">
         <div class="action-bar">
             <ul class="action-bar-container">
@@ -77,181 +292,7 @@
         <div class="horizontal-separation"></div>
 
         <div class="courses-container">
-            <div class="course-card">
-                <div class="course-information">
-                    <div>
-                        <img src="./images/imageMask-1.svg" alt="Course Image">
-                    </div>
-                    <div class="course-details">
-                        <div class="title">
-                            <h4>Acceleration</h4>
-                            <img width="20px" height="24px" src="./icons/favourite.svg" alt="Favourite Course">
-                        </div>
-                        <div class="related-subject">
-                            Physics
-                            <div class="separation"></div>
-                            Grade: 7<span>+2</span>
-                        </div>
-                        <div class="units-lessons-topics">
-                            <div> <strong>4</strong> Units </div>
-                            <div> <strong>18</strong> Lessons </div>
-                            <div> <strong>24</strong> Topics </div>
-                        </div>
-                        <div>
-                            <select class="teacher-select">
-                                <option value="Mr. Frank's Class B">Mr. Frank's Class B</option>
-                            </select>
-                        </div>
-                        <div class="enrollment-details">
-                            <div>
-                                <span>50</span> Students
-                            </div>
-                            <div>
-                                21-Jan-2020 - 21-Aug-2020
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="course-action-options">
-                    <img src="./icons/preview.svg" alt="Preview Course">
-                    <img src="./icons/manage course.svg" alt="Manage Course">
-                    <img src="./icons/grade submissions.svg" alt="Grade Submissions">
-                    <img src="./icons/reports.svg" alt="Reports">
-                </div>
-            </div>
-
-            <div class="course-card">
-                <div class="course-information">
-                    <div>
-                        <img src="./images/imageMask-2.svg" alt="Course Image">
-                    </div>
-                    <div class="course-details">
-                        <div class="title">
-                            <h4>Displacement, Velocity and Speed</h4>
-                            <img width="20px" height="24px" src="./icons/favourite.svg" alt="Favourite Course">
-                        </div>
-                        <div class="related-subject">
-                            Physics 2
-                            <div class="separation"></div>
-                            Grade: 6<span>+3</span>
-                        </div>
-                        <div class="units-lessons-topics">
-                            <div> <strong>2</strong> Units </div>
-                            <div> <strong>15</strong> Lessons </div>
-                            <div> <strong>20</strong> Topics </div>
-                        </div>
-                        <div>
-                            <select class="teacher-select" id="no-classes">
-                                <option value="">No Classes</option>
-                                <option value="Mr. Frank's Class B">Mr. Frank's Class B</option>
-                            </select>
-                        </div>
-                        <!-- <div class="enrollment-details">
-                            <div>
-                                <span>50</span> Students
-                            </div>
-                            <div>
-                                21-Jan-2020 - 21-Aug-2020
-                            </div>
-                        </div> -->
-                    </div>
-                </div>
-                <div class="course-action-options">
-                    <img src="./icons/preview.svg" alt="Preview Course">
-                    <img class="disable" src="./icons/manage course.svg" alt="Manage Course">
-                    <img class="disable" src="./icons/grade submissions.svg" alt="Grade Submissions">
-                    <img src="./icons/reports.svg" alt="Reports">
-                </div>
-            </div>
-
-            <div class="course-card">
-                <div class="course-information">
-                    <div>
-                        <img src="./images/imageMask.svg" alt="Course Image">
-                    </div>
-                    <div class="course-details">
-                        <div class="title">
-                            <h4>Introduction to Biology: Micro organisms and how they affec...</h4>
-                            <img width="20px" height="24px" src="./icons/favourite.svg" alt="Favourite Course">
-                        </div>
-                        <div class="related-subject">
-                            Biology
-                            <div class="separation"></div>
-                            Grade: 4<span>+1</span>
-                        </div>
-                        <div class="units-lessons-topics">
-                            <div> <strong>5</strong> Units </div>
-                            <div> <strong>16</strong> Lessons </div>
-                            <div> <strong>22</strong> Topics </div>
-                        </div>
-                        <div>
-                            <select class="teacher-select">
-                                <option value="All Classes">All Classes</option>
-                            </select>
-                        </div>
-                        <div class="enrollment-details">
-                            <div>
-                                <span>300</span> Students
-                            </div>
-                            <!-- <div>
-                                21-Jan-2020 - 21-Aug-2020
-                            </div> -->
-                        </div>
-                    </div>
-                </div>
-                <div class="course-action-options">
-                    <img src="./icons/preview.svg" alt="Preview Course">
-                    <img class="disable" src="./icons/manage course.svg" alt="Manage Course">
-                    <img class="disable" src="./icons/grade submissions.svg" alt="Grade Submissions">
-                    <img src="./icons/reports.svg" alt="Reports">
-                </div>
-            </div>
-
-            <div class="course-card expired-course">
-                <div class="expired-tag">
-                    EXPIRED
-                </div>
-                <div class="course-information">
-                    <div>
-                        <img src="./images/imageMask-3.svg" alt="Course Image">
-                    </div>
-                    <div class="course-details">
-                        <div class="title">
-                            <h4>Introduction to High School Mathematics</h4>
-                            <img width="20px" height="24px" src="./icons/star.svg" alt="Favourite Course">
-                        </div>
-                        <div class="related-subject">
-                            Mathematics
-                            <div class="separation"></div>
-                            Grade: 8<span>+2</span>
-                        </div>
-                        <!-- <div class="units-lessons-topics">
-                            <div> <strong>4</strong> Units </div>
-                            <div> <strong>18</strong> Lessons </div>
-                            <div> <strong>24</strong> Topics </div>
-                        </div> -->
-                        <div>
-                            <select class="teacher-select">
-                                <option value="Mr. Frank's Class A">Mr. Frank's Class A</option>
-                            </select>
-                        </div>
-                        <div class="enrollment-details">
-                            <div>
-                                <span>44</span> Students
-                            </div>
-                            <div>
-                                14-Oct-2019 - 20-Oct-2020
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="course-action-options">
-                    <img src="./icons/preview.svg" alt="Preview Course">
-                    <img src="./icons/manage course.svg" alt="Manage Course">
-                    <img src="./icons/grade submissions.svg" alt="Grade Submissions">
-                    <img src="./icons/reports.svg" alt="Reports">
-                </div>
-            </div>
+            
         </div>
     </main>
     <footer class="footer-container">

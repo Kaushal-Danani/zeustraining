@@ -1,0 +1,54 @@
+[
+    {
+        "diffrentBackground": true,
+        "content": "License for Introduction to Algebra has been assigned to your school",
+        "operation": "remove-announcement.svg",
+        "date": "15-Sep-2018",
+        "time": "07:21 pm"
+    },
+    {
+        "diffrentBackground": false,
+        "content": "Lesson 3 Practice Worksheet overdue for Amy Santiago",
+        "operation": "check-announcement.svg",
+        "course": "Advanced Mathematics",
+        "date": "15-Sep-2018",
+        "time": "07:21 pm"
+    },
+    {
+        "diffrentBackground": true,
+        "content": "23 new students created",
+        "operation": "remove-announcement.svg",
+        "date": "14-Sep-2018",
+        "time": "01:21 pm"
+    },
+    {
+        "diffrentBackground": true,
+        "content": "15 submissions ready for evaluation",
+        "operation": "remove-announcement.svg",
+        "course": "Basics of Algebra",
+        "date": "13-Sep-2018",
+        "time": "01:15 pm"
+    },
+    {
+        "diffrentBackground": true,
+        "content": "License for Basic Concepts in Geometry has been assigned to your... school",
+        "operation": "remove-announcement.svg",
+        "date": "15-Sep-2018",
+        "time": "07:21 pm"
+    },
+    {
+        "diffrentBackground": false,
+        "content": "Lesson 3 Practice Worksheet overdue for Sam Diego",
+        "operation": "check-announcement.svg",
+        "course": "Advanced Mathematics",
+        "date": "15-Sep-2018",
+        "time": "07:21 pm"
+    },
+    {
+        "diffrentBackground": true,
+        "content": "License for Basic Concepts in Geometry has been assigned to your... school",
+        "operation": "remove-announcement.svg",
+        "date": "11-Sep-2018",
+        "time": "02:21 pm"
+    }
+]
