@@ -2,6 +2,25 @@ import { Announcement } from './models/announcement.model';
 import { Notification } from './models/notification.model';
 import { Course } from './models/course.model';
 
+// Script for Login page
+const pwdIcon = document.getElementById("password-icon") as HTMLDivElement;
+if (pwdIcon) {
+    pwdIcon.addEventListener("click", () => {
+        const passwordInput = document.getElementById("password") as HTMLInputElement;
+    
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            pwdIcon.classList.remove("show-password");
+            pwdIcon.classList.add("hide-password");
+        } else {
+            passwordInput.type = "password";
+            pwdIcon.classList.remove("hide-password");
+            pwdIcon.classList.add("show-password");
+        }
+    });
+}
+
+// Script for Dashboard page
 function fetchAllData(): void {
     fetch('./json/announcement.json')
         .then((response: Response) => response.json())
@@ -224,3 +243,101 @@ function showHoverMenuWithchangeIcon(id: string, svg_id: string, badge_id: strin
         badge.style.display = 'none';
     }
 }
+
+const notificationIcon = document.getElementById("notification") as HTMLElement;
+if (notificationIcon)
+{
+    notificationIcon.addEventListener("mouseenter", () => {
+        showHoverMenuWithchangeIcon('notification-containner', 'Path_3675', 'notification-badge');
+    });
+    notificationIcon.addEventListener("mouseover", () => {
+        showHoverMenuWithchangeIcon('notification-containner', 'Path_3675', 'notification-badge');
+    });
+    notificationIcon.addEventListener("mouseout", () => {
+        hideHoverMenuByDelay('notification-containner', 'notification','Path_3675', 'notification-badge');
+    });
+}
+
+const notificationContainer = document.getElementById("notification-containner") as HTMLElement;
+if (notificationContainer)
+{
+    notificationContainer.addEventListener("mouseenter", () => {
+        showHoverMenuWithchangeIcon('notification-containner', 'Path_3675', 'notification-badge');
+    });
+    notificationContainer.addEventListener("mouseover", () => {
+        showHoverMenuWithchangeIcon('notification-containner', 'Path_3675', 'notification-badge');
+    });
+    notificationContainer.addEventListener("mouseout", () => {
+        hideHoverMenuWithIconChange('notification-containner', 'Path_3675', 'notification-badge');
+    });
+}
+
+
+const announcementIcon = document.getElementById("announcement") as HTMLElement;
+if(announcementIcon)
+{
+    announcementIcon.addEventListener("mouseenter", () => {
+        showHoverMenuWithchangeIcon('announcements-containner', 'announcement-svg-path', 'announcement-badge');
+    });
+    announcementIcon.addEventListener("mouseover", () => {
+        showHoverMenuWithchangeIcon('announcements-containner', 'announcement-svg-path', 'announcement-badge');
+    });
+    announcementIcon.addEventListener("mouseout", () => {
+        hideHoverMenuByDelay('announcements-containner', 'announcement','announcement-svg-path', 'announcement-badge');
+    });
+}
+
+const announcementContainer = document.getElementById("announcements-containner") as HTMLElement;
+if(announcementContainer)
+{
+    announcementContainer.addEventListener("mouseenter", () => {
+        showHoverMenuWithchangeIcon('announcements-containner', 'announcement-svg-path', 'announcement-badge');
+    });
+    announcementContainer.addEventListener("mouseover", () => {
+        showHoverMenuWithchangeIcon('announcements-containner', 'announcement-svg-path', 'announcement-badge');
+    });
+    announcementContainer.addEventListener("mouseout", () => {
+        hideHoverMenuWithIconChange('announcements-containner', 'announcement-svg-path', 'announcement-badge');
+    });
+}
+
+const hamburgerMenu = document.getElementById("hamburger-mobile") as HTMLElement;
+if (hamburgerMenu)
+{
+    hamburgerMenu.addEventListener("mouseenter", () => {
+        showHoverMenu('mobile-navbar');
+    });
+    hamburgerMenu.addEventListener("mouseover", () => {
+        showHoverMenu('mobile-navbar');
+    });
+    hamburgerMenu.addEventListener("mouseout", () => {
+        hideHoverMenu('mobile-navbar');
+    });
+}
+
+const mobileNavbar = document.getElementById("mobile-navbar") as HTMLElement;
+if (mobileNavbar)
+{
+    mobileNavbar.addEventListener("mouseenter", () => {
+        showHoverMenu('mobile-navbar');
+    });
+    mobileNavbar.addEventListener("mouseover", () => {
+        showHoverMenu('mobile-navbar');
+    });
+    mobileNavbar.addEventListener("mouseout", () => {
+        hideHoverMenu('mobile-navbar');
+    });
+}
+
+document.getElementById("content-compact").addEventListener("click", () => {
+    showSubMenu('#content-compact');
+});
+document.getElementById("users-compact").addEventListener("click", () => {
+    showSubMenu('#users-compact');
+});
+document.getElementById("reports-compact").addEventListener("click", () => {
+    showSubMenu('#reports-compact');
+});
+document.getElementById("admin-compact").addEventListener("click", () => {
+    showSubMenu('#admin-compact');
+});

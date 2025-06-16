@@ -131,6 +131,8 @@ select {
     gap: 33px;
 }
 .input-field-container {
+    position: relative;
+
     & input {
         border: none;
         width: 100%;
@@ -142,16 +144,34 @@ select {
         border-bottom: 1px solid #0000001b;
     }
 
-    & #password {
-        -webkit-appearance: none;
-        background-image: url('../icons/preview.svg');
-        background-repeat: no-repeat;
-        background-position-x: 100%;
-        background-position-y: 0px;
+    & .password-action {
+        position: absolute;
+        cursor: pointer;
+        height: 24px;
+        width: 24px;
+        top: 0%;
+        right: 0%;
+
+        &.hide-password {
+            -webkit-appearance: none;
+            background-image: url('../icons/hide-password.png');
+            background-repeat: no-repeat;
+            background-position-x: 100%;
+            background-position-y: 0px;
+        }
+
+        &.show-password {
+            -webkit-appearance: none;
+            background-image: url('../icons/preview.svg');
+            background-repeat: no-repeat;
+            background-position-x: 100%;
+            background-position-y: 0px;
+        }
     }
 }
 
 .forgot-text {
+    cursor: pointer;
     text-align: end;
     text-transform: uppercase;
     margin-top: 5px;
