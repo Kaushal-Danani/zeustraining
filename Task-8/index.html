@@ -8,10 +8,22 @@
     <link rel="stylesheet" href="./index.css">
 </head>
 <body>
-    <div id="grid-container">
-        <div class="canvas-container"></div>
-        <canvas id="overlay-canvas"></canvas>
+    <div id="excel-wraper">
+        <div id="top-left-intersection"></div>
+        <div id="horizontal-header">
+            <canvas id="h-canvas"></canvas>
+        </div>
+        <div id="vertical-header">
+            <canvas id="v-canvas"></canvas>
+        </div>
+        <div id="grid-container">
+            <div class="canvas-container">
+                <div id="scroll-bar"></div>
+                <!-- dynamic canvas will be add here  -->
+            </div>
+            <div id="status-bar"></div>
+        </div>
     </div>
-    <script src="./script.js"></script>
+    <script type="module" src="./script/script.js"></script>
 </body>
 </html>
