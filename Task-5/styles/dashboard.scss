@@ -58,7 +58,7 @@
     @include custom-flex(flex, right, center);
     height: 100%;
     gap: 32px;
-    margin: 0 20px 0 0;
+    margin: 0 0px 0 0;
 
     & li {
         text-decoration: none;
@@ -217,12 +217,16 @@
         font-size: 12px;
         color: #686868;
     }
+
+    & select {
+        width: 165px;
+    }
 }
 
 select {
     margin-top: 5px;
     height: 20px;
-    width: 165px;
+    width: 100%;
     background: transparent;
     font-size: 16px;
     font-family: Quicksand-SemiBold;
@@ -254,11 +258,13 @@ select {
 .courses-container {
     display: grid;
     justify-content: center;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 476px));
+    grid-template-columns: repeat(auto-fit, minmax(auto, 571px));
     gap: 24px;
 }
 
 .course-card {
+    display: flex;
+    flex-wrap: wrap;
     padding: 24px 16px 9px 24px;
     background-color: #fff;
     border-radius: 2px; 
@@ -266,12 +272,28 @@ select {
 
 .course-information {
     display: flex;
+    flex-wrap: wrap;    
+    justify-content: center;
     align-items: flex-start;
     gap: 16px;
+    width: 100%;
     font-family: Quicksand-Medium;
 
+    & .course-image-container {
+        width: 132px;
+
+        & img {
+            flex: 0 0 132px;
+            min-width: 132px;
+        }
+    }
+
     & .course-details {
-        width: 100%;
+        flex: 1 0 250px;
+
+        & .teacher-selector {
+            width: 100%;
+        }
     }
 
     & .title {
@@ -282,7 +304,7 @@ select {
 
     & .title h4 {
         margin: 0px;
-        width: 250px;
+        width: 90%;
         color: #222222;
         font-size: 1rem;
     }
@@ -319,7 +341,6 @@ select {
 }
 
 .teacher-select {
-    width: 264px;
     margin-top: 16px;
     vertical-align: baseline;
     height: 27px;
@@ -338,14 +359,14 @@ select {
 }
 
 .course-action-options {
-    width: 386px;
+    width: 100%;
     margin-top: 16px;
     padding: 15px 24px 0px 24px;
     display: flex;
     justify-content: space-between;
     border-top: 1px solid rgba(0, 0, 0, 0.12);
 
-    & .disable {
+    .disable {
         opacity: 40%;
     }
 }
@@ -383,7 +404,7 @@ select {
     width: 315px;
     max-height: 0px;
     top: 58px;
-    right: 85px;
+    right: 105px;
     overflow-y: scroll;
     background-color: white;
     box-shadow: 0 3px 6px #00000029;
@@ -517,7 +538,7 @@ select {
     width: 315px;
     max-height: 0px;
     top: 58px;
-    right: 145px;
+    right: 165px;
     overflow-y: scroll;
     background-color: white;
     box-shadow: 0 3px 6px #00000029;
@@ -596,7 +617,6 @@ select {
 
     .hamburger {
         @include flex-center();
-        margin-right: 1rem;
         height: 56px;
         z-index: 1;
 
@@ -674,11 +694,17 @@ select {
 
     .notification-containner {
         top: 58px;
-        right: 188px;
+        right: 200px;
     }
 
     .announcements-containner {
         top: 58px;
         right: 136px;
+    }
+}
+
+@media (max-width: 430px) {
+    .nav-container {
+        gap: 12px;
     }
 }

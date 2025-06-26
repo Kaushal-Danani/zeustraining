@@ -93,7 +93,7 @@ function addCourses(courseData) {
         <div class="course-card ${expiredClass}">
             ${expiredTag}
             <div class="course-information">
-                <div>
+                <div class="image-container">
                     <img src="${course.image}" alt="Course Image">
                 </div>
                 <div class="course-details">
@@ -112,8 +112,8 @@ function addCourses(courseData) {
                         <div> <strong>${course.lessons}</strong> Lessons </div>
                         <div> <strong>${course.topics}</strong> Topics </div>
                     </div>` : ''}
-                    <div>
-                        <select class="teacher-select" ${course.teacherClasses[0] === "No Classes" ? `id="no-classes"` : ``}>
+                    <div class="teacher-selector">
+                        <select name="teacher" class="teacher-select" ${course.teacherClasses[0] === "No Classes" ? `id="no-classes"` : ``}>
                             ${course.teacherClasses.map(teacherClass => `<option value="${teacherClass}">${teacherClass}</option>`).join('')}
                         </select>
                     </div>

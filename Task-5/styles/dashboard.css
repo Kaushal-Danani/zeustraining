@@ -152,7 +152,7 @@ html, body {
           align-items: center;
   height: 100%;
   gap: 32px;
-  margin: 0 20px 0 0;
+  margin: 0 0px 0 0;
 }
 
 .nav-container li {
@@ -383,10 +383,14 @@ html, body {
   color: #686868;
 }
 
+.sort-select-field select {
+  width: 165px;
+}
+
 select {
   margin-top: 5px;
   height: 20px;
-  width: 165px;
+  width: 100%;
   background: transparent;
   font-size: 16px;
   font-family: Quicksand-SemiBold;
@@ -421,12 +425,17 @@ select#sort-by {
   -webkit-box-pack: center;
       -ms-flex-pack: center;
           justify-content: center;
-  -ms-grid-columns: (minmax(200px, 476px))[auto-fit];
-      grid-template-columns: repeat(auto-fit, minmax(200px, 476px));
+  -ms-grid-columns: (minmax(auto, 571px))[auto-fit];
+      grid-template-columns: repeat(auto-fit, minmax(auto, 571px));
   gap: 24px;
 }
 
 .course-card {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
   padding: 24px 16px 9px 24px;
   background-color: #fff;
   border-radius: 2px;
@@ -436,14 +445,37 @@ select#sort-by {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
+  -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
   -webkit-box-align: start;
       -ms-flex-align: start;
           align-items: flex-start;
   gap: 16px;
+  width: 100%;
   font-family: Quicksand-Medium;
 }
 
+.course-information .course-image-container {
+  width: 132px;
+}
+
+.course-information .course-image-container img {
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 132px;
+          flex: 0 0 132px;
+  min-width: 132px;
+}
+
 .course-information .course-details {
+  -webkit-box-flex: 1;
+      -ms-flex: 1 0 250px;
+          flex: 1 0 250px;
+}
+
+.course-information .course-details .teacher-selector {
   width: 100%;
 }
 
@@ -459,7 +491,7 @@ select#sort-by {
 
 .course-information .title h4 {
   margin: 0px;
-  width: 250px;
+  width: 90%;
   color: #222222;
   font-size: 1rem;
 }
@@ -501,7 +533,6 @@ select#sort-by {
 }
 
 .teacher-select {
-  width: 264px;
   margin-top: 16px;
   vertical-align: baseline;
   height: 27px;
@@ -522,7 +553,7 @@ select#sort-by {
 }
 
 .course-action-options {
-  width: 386px;
+  width: 100%;
   margin-top: 16px;
   padding: 15px 24px 0px 24px;
   display: -webkit-box;
@@ -576,7 +607,7 @@ select#sort-by {
   width: 315px;
   max-height: 0px;
   top: 58px;
-  right: 85px;
+  right: 105px;
   overflow-y: scroll;
   background-color: white;
   -webkit-box-shadow: 0 3px 6px #00000029;
@@ -760,7 +791,7 @@ select#sort-by {
   width: 315px;
   max-height: 0px;
   top: 58px;
-  right: 145px;
+  right: 165px;
   overflow-y: scroll;
   background-color: white;
   -webkit-box-shadow: 0 3px 6px #00000029;
@@ -890,7 +921,6 @@ select#sort-by {
     -webkit-box-align: center;
         -ms-flex-align: center;
             align-items: center;
-    margin-right: 1rem;
     height: 56px;
     z-index: 1;
   }
@@ -996,11 +1026,17 @@ select#sort-by {
   }
   .notification-containner {
     top: 58px;
-    right: 188px;
+    right: 200px;
   }
   .announcements-containner {
     top: 58px;
     right: 136px;
+  }
+}
+
+@media (max-width: 430px) {
+  .nav-container {
+    gap: 12px;
   }
 }
 /*# sourceMappingURL=dashboard.css.map */
