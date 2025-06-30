@@ -2,57 +2,27 @@ import { ExcelGrid } from "./ExcelGrid.js";
 
 /**
  * Manages a pool of canvas elements for dynamic rendering
- * Implements tile-based rendering for efficient display of large grids
  */
 export class CanvasPool {
-    
     /**
      * Initializes the CanvasPool object
      * @param {ExcelGrid} grid - Reference to the main ExcelGrid instance
      * @param {Object} options - Configuration options for the canvas pool
-     * @param {number} options.tileSize - Size of each canvas tile in pixels
      */
     constructor(grid, options = {}) {
-        /** @type {ExcelGrid} Reference to the main grid instance */
         this.grid = grid;
-        
-        /** @type {Map<string, HTMLCanvasElement>} Map of active canvas tiles */
         this.activeTiles = new Map();
-        
-        /** @type {HTMLCanvasElement[]} Pool of reusable canvas elements */
         this.canvasPool = [];
-        
-        /** @type {number} Size of each tile in pixels */
         this.tileSize = options.tileSize || 800;
-        
-        /** @type {number} Number of rows that fit in one tile */
         this.rowsPerTile = Math.floor(this.tileSize / grid.config.rowHeight);
-        
-        /** @type {number} Number of columns that fit in one tile */
         this.colsPerTile = Math.floor(this.tileSize / grid.config.columnWidth);
-        
-        /** @type {HTMLElement} Container element for canvas tiles */
         this.container = grid.canvasContainer;
     }
 
-    /**
-     * Generates a unique key for a tile based on its coordinates
-     * @param {number} tileX - X coordinate of the tile
-     * @param {number} tileY - Y coordinate of the tile
-     * @returns {string} Unique tile key
-     */
     getTileKey(tileX, tileY) {
         return `${tileX}_${tileY}`;
     }
 
-    /**
-     * Calculates which tiles are visible in the current viewport
-     * @param {number} viewportX - X position of the viewport
-     * @param {number} viewportY - Y position of the viewport
-     * @param {number} viewportWidth - Width of the viewport
-     * @param {number} viewportHeight - Height of the viewport
-     * @returns {Array<Object>} Array of visible tile coordinates
-     */
     getVisibleTiles(viewportX, viewportY, viewportWidth, viewportHeight) {
         const buffer = this.tileSize * 0.2;
         
@@ -70,10 +40,6 @@ export class CanvasPool {
         return tiles;
     }
 
-    /**
-     * Creates a new canvas element with proper scaling
-     * @returns {HTMLCanvasElement} Newly created canvas element
-     */
     createNewCanvas() {
         const canvas = document.createElement('canvas');
         canvas.className = 'grid-tile';
@@ -91,12 +57,6 @@ export class CanvasPool {
         return canvas;
     }
 
-    /**
-     * Positions a canvas element at the specified tile coordinates
-     * @param {HTMLCanvasElement} canvas - The canvas element to position
-     * @param {number} tileX - X coordinate of the tile
-     * @param {number} tileY - Y coordinate of the tile
-     */
     positionCanvas(canvas, tileX, tileY) {
         const pixelX = tileX * this.tileSize;
         const pixelY = tileY * this.tileSize;
@@ -106,12 +66,6 @@ export class CanvasPool {
         canvas.style.display = 'block';
     }
 
-    /**
-     * Creates or updates a tile at the specified coordinates
-     * @param {number} tileX - X coordinate of the tile
-     * @param {number} tileY - Y coordinate of the tile
-     * @returns {HTMLCanvasElement} The canvas element for the tile
-     */
     createTile(tileX, tileY) {
         const tileKey = this.getTileKey(tileX, tileY);
         
@@ -145,10 +99,6 @@ export class CanvasPool {
         return canvas;
     }
 
-    /**
-     * Removes a tile from active use and returns it to the pool
-     * @param {string} tileKey - Unique key of the tile to remove
-     */
     removeTile(tileKey) {
         const canvas = this.activeTiles.get(tileKey);
         if (canvas) {
@@ -158,12 +108,6 @@ export class CanvasPool {
         }
     }
 
-    /**
-     * Renders the grid content on a specific tile
-     * @param {HTMLCanvasElement} canvas - The canvas element to render on
-     * @param {number} tileX - X coordinate of the tile
-     * @param {number} tileY - Y coordinate of the tile
-     */
     renderTile(canvas, tileX, tileY) {
         const ctx = canvas.getContext('2d');
         const config = this.grid.config;
@@ -177,9 +121,9 @@ export class CanvasPool {
         const endCol = Math.min(startCol + Math.ceil(this.tileSize / config.columnWidth) + 1, this.grid.currentColumns);
         const startRow = Math.floor(tileStartY / config.rowHeight);
         const endRow = Math.min(startRow + Math.ceil(this.tileSize / config.rowHeight) + 1, this.grid.currentRows);
-        
+
         ctx.font = config.font;
-        ctx.translate(0.5, 0.5);
+        // ctx.translate(0.5, 0.5);
         ctx.lineWidth = 1;
         
         // Draw cells background
@@ -188,9 +132,10 @@ export class CanvasPool {
         
         // Draw vertical grid lines
         ctx.strokeStyle = config.colors.gridLine;
+        ctx.lineWidth = 1;
         ctx.beginPath();
         for (let col = startCol; col <= endCol; col++) {
-            const gridX = col * config.columnWidth;
+            const gridX = (col * config.columnWidth);
             const canvasX = gridX - tileStartX;
             if (canvasX >= -1 && canvasX <= this.tileSize + 1) {
                 ctx.moveTo(canvasX - 0.5, 0);
@@ -202,7 +147,7 @@ export class CanvasPool {
         // Draw horizontal grid lines
         ctx.beginPath();
         for (let row = startRow; row <= endRow; row++) {
-            const gridY = row * config.rowHeight;
+            const gridY = (row * config.rowHeight);
             const canvasY = gridY - tileStartY;
             if (canvasY >= -1 && canvasY <= this.tileSize + 1) {
                 ctx.moveTo(0, canvasY - 0.5);
@@ -210,15 +155,33 @@ export class CanvasPool {
             }
         }
         ctx.stroke();
+        
+        // Draw cell values
+        ctx.fillStyle = config.colors.cellText;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        for (let row = startRow; row <= endRow; row++) {
+            for (let col = startCol; col <= endCol; col++) {
+                const cell = this.grid.store.getCell(row, col);
+                if (cell.value) {
+                    const canvasX = (col * config.columnWidth) - tileStartX - this.grid.scrollX + 2;
+                    const canvasY = (row * config.rowHeight) - tileStartY - this.grid.scrollY + config.rowHeight / 2;
+                    ctx.fillText(cell.value, canvasX, canvasY);
+                }
+            }
+        }
     }
 
     /**
-     * Updates which tiles are visible and manages tile creation/removal
-     * @param {number} scrollX - Current horizontal scroll position
-     * @param {number} scrollY - Current vertical scroll position
-     * @param {number} viewportWidth - Width of the viewport
-     * @param {number} viewportHeight - Height of the viewport
+     * Re-renders all active tiles (used after cell value changes)
      */
+    renderTiles() {
+        this.activeTiles.forEach((canvas, tileKey) => {
+            const [tileX, tileY] = tileKey.split('_').map(Number);
+            this.renderTile(canvas, tileX, tileY);
+        });
+    }
+
     updateVisibleTiles(scrollX, scrollY, viewportWidth, viewportHeight) {
         const visibleTiles = this.getVisibleTiles(scrollX, scrollY, viewportWidth, viewportHeight);
         const newActiveTiles = new Set();

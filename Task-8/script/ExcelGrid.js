@@ -1,12 +1,12 @@
 import { CanvasPool } from "./CanvasPool.js";
 import { DEFAULT_CONFIG } from "./config.js";
+import { Store } from "./Store.js";
+import { Column } from "./Column.js";
 
 /**
- * Main Excel Grid class with adaptive content loading
- * Provides a virtual spreadsheet interface with dynamic row/column loading
+ * Main Excel Grid class with adaptive content loading and cell selection
  */
 export class ExcelGrid {
-    
     /**
      * Initializes the ExcelGrid object
      * @param {HTMLElement} container - The DOM container element for the grid
@@ -39,8 +39,20 @@ export class ExcelGrid {
         /** @type {HTMLElement} Status bar element */
         this.statusBar = this.container.querySelector('#status-bar');
         
+        /** @type {HTMLElement} Scroll content element */
+        this.scrollContent = this.canvasContainer.querySelector('#scroll-content');
+        
         /** @type {CanvasPool} Canvas pool for tile management */
         this.canvasPool = new CanvasPool(this, { tileSize: this.config.tileSize });
+        
+        /** @type {Store} Data store for cells */
+        this.store = new Store(this.config.initialRows, this.config.initialColumns);
+        
+        /** @type {Map<number, Column>} Map of column index to Column */
+        this.columns = new Map();
+        for (let col = 0; col < this.config.initialColumns; col++) {
+            this.columns.set(col, new Column(col, this.config.columnWidth));
+        }
         
         /** @type {number} Current number of loaded rows */
         this.currentRows = this.config.initialRows;
@@ -72,7 +84,25 @@ export class ExcelGrid {
         /** @type {boolean} Flag indicating if columns are currently being loaded */
         this.isLoadingColumns = false;
         
+        /** @type {{row: number, col: number} | null} Anchor cell for range selection */
+        this.selectionAnchor = null;
+        
+        /** @type {{row: number, col: number} | null} Current selection end */
+        this.selectionEnd = null;
+        
+        /** @type {boolean} Flag indicating if mouse is down for drag selection */
+        this.isMouseDown = false;
+        
+        /** @type {HTMLElement | null} Current input container */
+        this.inputContainer = null;
+        
+        /** @type {HTMLElement | null} Current selection div */
+        this.selectionDiv = null;
+
+        this.isSelected = false;
+
         this.initializeCanvas();
+        this.updateScrollContent();
         this.setupEventListeners();
         this.updateViewport();
         this.render();
@@ -102,19 +132,29 @@ export class ExcelGrid {
     }
 
     /**
+     * Updates the scrollable content area
+     */
+    updateScrollContent() {
+        const currentWidth = this.currentColumns * this.config.columnWidth;
+        const currentHeight = this.currentRows * this.config.rowHeight;
+        
+        this.scrollContent.style.width = `${currentWidth}px`;
+        this.scrollContent.style.height = `${currentHeight}px`;
+    }
+
+    /**
      * Sets up all event listeners for user interaction
      */
     setupEventListeners() {
-        // Main scroll event handler with adaptive loading
+        // Main scroll event handler
         this.canvasContainer.addEventListener('scroll', (e) => {
             this.scrollX = e.target.scrollLeft;
             this.scrollY = e.target.scrollTop;
             
-            // Check if we need to load more content or contract
             this.checkAndAdaptContent();
-            
             this.updateViewport();
             this.render();
+            this.updateSelectionDivPosition();
         });
 
         // Mouse wheel support
@@ -129,42 +169,234 @@ export class ExcelGrid {
         // Window resize handler
         window.addEventListener('resize', () => {
             this.initializeCanvas();
+            this.updateScrollContent();
             this.updateViewport();
             this.render();
+            this.updateSelectionDivPosition();
         });
 
-        // Mouse move handler for debugging
+        // Mouse event handlers for cell selection
+        this.canvasContainer.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) // Only handle left-click
+                return; 
+            else if (this.isSelected)
+                return;
+
+            this.isMouseDown = true;
+            const cell = this.getCurrentCell(e.clientX - this.config.headerWidth, 
+                                           e.clientY - this.config.headerHeight);
+            // console.log("Cell: "+cell.address);
+            if (cell) {
+                if (e.shiftKey && this.selectionAnchor) {
+                    // Extend selection
+                    this.store.clearSelections();
+                    this.store.setSelectionRange(
+                        this.selectionAnchor.row,
+                        this.selectionAnchor.col,
+                        cell.row,
+                        cell.col
+                    );
+                    this.selectionEnd = { row: cell.row, col: cell.col };
+                } else {
+                    // New selection
+                    this.store.clearSelections();
+                    this.store.setSelectionRange(cell.row, cell.col, cell.row, cell.col);
+                    this.selectionAnchor = { row: cell.row, col: cell.col };
+                    this.selectionEnd = { row: cell.row, col: cell.col };
+                }
+                this.updateSelectionDiv();
+                this.updateStatusBar();
+            }
+        });
+
         this.canvasContainer.addEventListener('mousemove', (e) => {
-            console.log(e.clientX, e.clientY);
-            console.log(this.getCurrentCell(e.clientX-this.config.headerWidth, e.clientY-this.config.headerHeight));
+            if (this.isMouseDown) {
+                const cell = this.getCurrentCell(e.clientX - this.config.headerWidth, 
+                                               e.clientY - this.config.headerHeight);
+                if (cell && (cell.row !== this.selectionEnd?.row || cell.col !== this.selectionEnd?.col)) {
+                    this.store.clearSelections();
+                    this.store.setSelectionRange(
+                        this.selectionAnchor.row,
+                        this.selectionAnchor.col,
+                        cell.row,
+                        cell.col
+                    );
+                    this.selectionEnd = { row: cell.row, col: cell.col };
+                    this.updateSelectionDiv();
+                    this.updateStatusBar();
+                }
+            }
+        });
+
+        this.canvasContainer.addEventListener('mouseup', () => {
+            this.isMouseDown = false;
+        });
+
+        // Double-click handler for cell editing
+        this.canvasContainer.addEventListener('dblclick', (e) => {
+            this.isSelected = true;
+            const cell = this.getCurrentCell(e.clientX - this.config.headerWidth, 
+                                           e.clientY - this.config.headerHeight);
+            if (cell) {
+                this.createInputBox(cell);
+            }
         });
 
         // Keyboard navigation
         this.canvasContainer.addEventListener('keydown', (e) => {
-            const scrollAmount = this.config.rowHeight * 3;
-            
-            switch(e.key) {
+            if (!this.selectionAnchor) return;
+            let newRow = this.selectionAnchor.row;
+            let newCol = this.selectionAnchor.col;
+
+            switch (e.key) {
                 case 'ArrowUp':
                     e.preventDefault();
-                    this.canvasContainer.scrollTop = Math.max(0, this.canvasContainer.scrollTop - scrollAmount);
+                    newRow = Math.max(0, newRow - 1);
                     break;
                 case 'ArrowDown':
                     e.preventDefault();
-                    this.canvasContainer.scrollTop = this.canvasContainer.scrollTop + scrollAmount;
+                    newRow = Math.min(this.currentRows - 1, newRow + 1);
                     break;
                 case 'ArrowLeft':
                     e.preventDefault();
-                    this.canvasContainer.scrollLeft = Math.max(0, this.canvasContainer.scrollLeft - this.config.columnWidth);
+                    newCol = Math.max(0, newCol - 1);
                     break;
                 case 'ArrowRight':
                     e.preventDefault();
-                    this.canvasContainer.scrollLeft = this.canvasContainer.scrollLeft + this.config.columnWidth
+                    newCol = Math.min(this.currentColumns - 1, newCol + 1);
                     break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (this.selectionAnchor) {
+                        this.createInputBox({ row: this.selectionAnchor.row, col: this.selectionAnchor.col });
+                    }
+                    break;
+            }
+
+            if (newRow !== this.selectionAnchor.row || newCol !== this.selectionAnchor.col) {
+                this.store.clearSelections();
+                this.store.setSelectionRange(newRow, newCol, newRow, newCol);
+                this.selectionAnchor = { row: newRow, col: newCol };
+                this.selectionEnd = { row: newRow, col: newCol };
+                this.scrollToCell(newRow, newCol);
+                this.updateSelectionDiv();
+                this.updateStatusBar();
             }
         });
 
         this.canvasContainer.setAttribute('tabindex', '0');
-        this.canvasContainer.focus();
+    }
+
+    /**
+     * Creates a selection div for the current selection range
+     */
+    createSelectionDiv() {
+        this.removeSelectionDiv();
+
+        if (!this.selectionAnchor || !this.selectionEnd) return;
+
+        const minRow = Math.min(this.selectionAnchor.row, this.selectionEnd.row);
+        const maxRow = Math.max(this.selectionAnchor.row, this.selectionEnd.row);
+        const minCol = Math.min(this.selectionAnchor.col, this.selectionEnd.col);
+        const maxCol = Math.max(this.selectionAnchor.col, this.selectionEnd.col);
+
+        this.selectionDiv = document.createElement('div');
+        this.selectionDiv.style.position = 'absolute';
+        this.selectionDiv.style.width = `${(maxCol - minCol + 1) * this.config.columnWidth + 3}px`;
+        this.selectionDiv.style.height = `${(maxRow - minRow + 1) * this.config.rowHeight + 3}px`;
+        this.selectionDiv.style.left = `${minCol * this.config.columnWidth - 1.5}px`;
+        this.selectionDiv.style.top = `${minRow * this.config.rowHeight - 1.5}px`;
+        this.selectionDiv.style.border = `2px solid ${this.config.colors.selectionBorder}`;
+        this.selectionDiv.style.zIndex = '900'; // Below input box (zIndex 1000)
+        this.selectionDiv.style.pointerEvents = 'none'; // Allow clicks to pass through
+
+        this.canvasContainer.appendChild(this.selectionDiv);
+    }
+
+    /**
+     * Updates the position and size of the selection div
+     */
+    updateSelectionDiv() {
+        this.createSelectionDiv();
+    }
+
+    /**
+     * Removes the current selection div if it exists
+     */
+    removeSelectionDiv() {
+        if (this.selectionDiv) {
+            this.selectionDiv.remove();
+            this.selectionDiv = null;
+        }
+    }
+
+    /**
+     * Creates an input box for editing a cell
+     * @param {{row: number, col: number}} cell - The cell to edit
+     */
+    createInputBox(cell) {
+        // Remove existing input box and selection div
+        this.removeInputBox();
+        this.removeSelectionDiv();
+
+        // Create input container
+        this.inputContainer = document.createElement('div');
+        this.inputContainer.style.position = 'absolute';
+        this.inputContainer.style.width = `${this.config.columnWidth}px`;
+        this.inputContainer.style.height = `${this.config.rowHeight}px`;
+        this.inputContainer.style.left = `${cell.col * this.config.columnWidth - 2.5}px`;
+        this.inputContainer.style.top = `${cell.row * this.config.rowHeight - 2.5}px`;
+        this.inputContainer.style.zIndex = '1000';
+
+        // Create input element
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.style.all = 'unset';
+        input.style.width = `calc(100% - 3px)`;
+        input.style.height = '100%';
+        input.style.padding = '0px 0px 0px 3px';
+        input.style.margin = '0';
+        input.style.border = '2px solid #137E41';
+        input.style.background = 'transparent';
+        input.style.font = this.config.font;
+        input.style.color = this.config.colors.cellText;
+        input.value = this.store.getCell(cell.row, cell.col).value || '';
+
+        this.inputContainer.appendChild(input);
+        this.canvasContainer.appendChild(this.inputContainer);
+
+        // Focus and select input content
+        input.focus();
+        input.select();
+
+        // Save value on Enter or blur
+        const saveValue = () => {
+            this.store.setCellValue(cell.row, cell.col, input.value);
+            this.removeInputBox();
+            this.canvasPool.renderTiles();
+            this.createSelectionDiv();
+            this.isSelected = false;
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.removeInputBox();
+                this.canvasPool.renderTiles(); // Render only affected tiles
+                this.createSelectionDiv(); // Restore selection div
+            }
+        });
+
+        input.addEventListener('blur', saveValue);
+    }
+
+    /**
+     * Removes the current input box if it exists
+     */
+    removeInputBox() {
+        if (this.inputContainer) {
+            this.inputContainer.remove();
+            this.inputContainer = null;
+        }
     }
 
     /**
@@ -173,15 +405,12 @@ export class ExcelGrid {
     checkAndAdaptContent() {
         const container = this.canvasContainer;
         const threshold = this.config.loadThreshold;
-        const contractThreshold = this.config.contractThreshold;
         
-        // Calculate current visible area
         const visibleRows = Math.ceil(container.clientHeight / this.config.rowHeight);
         const visibleColumns = Math.ceil(container.clientWidth / this.config.columnWidth);
         const currentRow = Math.floor(container.scrollTop / this.config.rowHeight);
         const currentColumn = Math.floor(container.scrollLeft / this.config.columnWidth);
         
-        // Update maximum reached positions
         const maxVisibleRow = currentRow + visibleRows;
         const maxVisibleColumn = currentColumn + visibleColumns;
         
@@ -192,20 +421,17 @@ export class ExcelGrid {
             this.maxReachedColumn = maxVisibleColumn;
         }
         
-        // console.log(container.scrollHeight);
-        // Check vertical scrolling (rows)
         const verticalScrollPercentage = (container.scrollTop + container.clientHeight) / container.scrollHeight;
         if (verticalScrollPercentage >= threshold && !this.isLoadingRows && this.currentRows < this.config.maxRows) {
             this.loadMoreRows();
-        } else if (verticalScrollPercentage <= contractThreshold && this.currentRows > this.config.initialRows) {
+        } else if (this.scrollY <= 0) {
             this.contractRows();
         }
         
-        // Check horizontal scrolling (columns)
         const horizontalScrollPercentage = (container.scrollLeft + container.clientWidth) / container.scrollWidth;
         if (horizontalScrollPercentage >= threshold && !this.isLoadingColumns && this.currentColumns < this.config.maxColumns) {
             this.loadMoreColumns();
-        } else if (horizontalScrollPercentage <= contractThreshold && this.currentColumns > this.config.initialColumns) {
+        } else if (this.scrollX <= 0) {
             this.contractColumns();
         }
     }
@@ -214,7 +440,7 @@ export class ExcelGrid {
      * Loads additional rows when user scrolls near the bottom
      * @async
      */
-    async loadMoreRows() {
+    loadMoreRows() {
         if (this.isLoadingRows || this.currentRows >= this.config.maxRows) return;
         
         this.isLoadingRows = true;
@@ -225,6 +451,7 @@ export class ExcelGrid {
         );
         
         this.currentRows = newRowCount;
+        this.updateScrollContent();
         this.updateViewport();
         
         this.isLoadingRows = false;
@@ -236,7 +463,7 @@ export class ExcelGrid {
      * Loads additional columns when user scrolls near the right edge
      * @async
      */
-    async loadMoreColumns() {
+    loadMoreColumns() {
         if (this.isLoadingColumns || this.currentColumns >= this.config.maxColumns) return;
         
         this.isLoadingColumns = true;
@@ -247,6 +474,11 @@ export class ExcelGrid {
         );
         
         this.currentColumns = newColumnCount;
+        this.store.updateColumns(newColumnCount);
+        for (let col = this.currentColumns - this.config.loadChunkColumns; col < newColumnCount; col++) {
+            this.columns.set(col, new Column(col, this.config.columnWidth));
+        }
+        this.updateScrollContent();
         this.updateViewport();
         
         this.isLoadingColumns = false;
@@ -262,22 +494,17 @@ export class ExcelGrid {
         const visibleRows = Math.ceil(container.clientHeight / this.config.rowHeight);
         const currentRow = Math.floor(container.scrollTop / this.config.rowHeight);
         
-        // Calculate how many rows we actually need
         const neededRows = Math.max(
             this.config.initialRows,
-            Math.max(this.maxReachedRow, currentRow + visibleRows) + this.config.minBuffer
+            Math.min(this.maxReachedRow, currentRow + visibleRows) + this.config.minBuffer
         );
         
         if (neededRows < this.currentRows) {
             const currentScrollRatio = container.scrollTop / container.scrollHeight;
-            console.log(currentScrollRatio);
-            
             this.currentRows = neededRows;
-            
-            // Maintain scroll position ratio
+            this.updateScrollContent();
             const newScrollTop = currentScrollRatio * container.scrollHeight;
             container.scrollTop = Math.max(0, newScrollTop);
-            
             this.updateViewport();
             console.log(`Contracted rows. Current total: ${this.currentRows}`);
         }
@@ -291,21 +518,21 @@ export class ExcelGrid {
         const visibleColumns = Math.ceil(container.clientWidth / this.config.columnWidth);
         const currentColumn = Math.floor(container.scrollLeft / this.config.columnWidth);
         
-        // Calculate how many columns we actually need
         const neededColumns = Math.max(
             this.config.initialColumns,
-            Math.max(this.maxReachedColumn, currentColumn + visibleColumns) + this.config.minBuffer
+            Math.min(this.maxReachedColumn, currentColumn + visibleColumns) + this.config.minBuffer
         );
         
         if (neededColumns < this.currentColumns) {
             const currentScrollRatio = container.scrollLeft / container.scrollWidth;
-            
             this.currentColumns = neededColumns;
-            
-            // Maintain scroll position ratio
+            this.store.updateColumns(neededColumns);
+            for (let col = neededColumns; col < this.currentColumns; col++) {
+                this.columns.delete(col);
+            }
+            this.updateScrollContent();
             const newScrollLeft = currentScrollRatio * container.scrollWidth;
             container.scrollLeft = Math.max(0, newScrollLeft);
-            
             this.updateViewport();
             console.log(`Contracted columns. Current total: ${this.currentColumns}`);
         }
@@ -321,6 +548,36 @@ export class ExcelGrid {
         
         this.canvasPool.updateVisibleTiles(this.scrollX, this.scrollY, this.viewportWidth, this.viewportHeight);
         this.updateStatusBar();
+        this.updateInputBoxPosition();
+    }
+
+    /**
+     * Updates the position of the input box when scrolling
+     */
+    updateInputBoxPosition() {
+        if (this.inputContainer) {
+            const cell = this.store.getCell(this.selectionAnchor.row, this.selectionAnchor.col);
+            if (cell) {
+                this.inputContainer.style.left = `${this.selectionAnchor.col * this.config.columnWidth - 2.5}px`;
+                this.inputContainer.style.top = `${this.selectionAnchor.row * this.config.rowHeight - 2.5}px`;
+            }
+        }
+    }
+
+    /**
+     * Updates the position of the selection div when scrolling
+     */
+    updateSelectionDivPosition() {
+        if (this.selectionDiv && this.selectionAnchor && this.selectionEnd) {
+            const minRow = Math.min(this.selectionAnchor.row, this.selectionEnd.row);
+            const minCol = Math.min(this.selectionAnchor.col, this.selectionEnd.col);
+            // this.selectionDiv.style.left = `${minCol * this.config.columnWidth}px`;
+            // this.selectionDiv.style.top = `${minRow * this.config.rowHeight}px`;
+            // this.selectionDiv.style.width = `${(maxCol - minCol + 1) * this.config.columnWidth + 3}px`;
+            // this.selectionDiv.style.height = `${(maxRow - minRow + 1) * this.config.rowHeight + 3}px`;
+            this.selectionDiv.style.left = `${minCol * this.config.columnWidth - 1.5}px`;
+            this.selectionDiv.style.top = `${minRow * this.config.rowHeight - 1.5}px`;
+        }
     }
 
     /**
@@ -350,14 +607,14 @@ export class ExcelGrid {
             this.currentColumns
         );
         
-        ctx.clearRect(0, 0, this.viewportWidth, config.headerHeight);
+        ctx.clearRect(0, 0, window.innerWidth, config.headerHeight);
         ctx.fillStyle = config.colors.headerBg;
-        ctx.fillRect(config.headerWidth, 0, this.viewportWidth, config.headerHeight);
+        ctx.fillRect(0, 0, window.innerWidth, config.headerHeight);
         
         ctx.strokeStyle = config.colors.headerBorder;
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(config.headerWidth, config.headerHeight - 0.5);
+        ctx.moveTo(0, config.headerHeight - 0.5);
         ctx.lineTo(window.innerWidth, config.headerHeight - 0.5);
         ctx.stroke();
         
@@ -367,8 +624,8 @@ export class ExcelGrid {
         ctx.textBaseline = 'middle';
         
         for (let col = startCol; col < endCol; col++) {
-            const x = config.headerWidth + (col * config.columnWidth) - this.scrollX;
-            if (x + config.columnWidth > config.headerWidth && x < this.viewportWidth) {
+            const x = (col * config.columnWidth) - this.scrollX + config.headerWidth;
+            if (x + config.columnWidth > 0 && x < this.viewportWidth) {
                 const letter = this.columnNumberToLetter(col);
                 ctx.fillText(letter, x + config.columnWidth / 2, config.headerHeight / 2);
                 
@@ -394,14 +651,14 @@ export class ExcelGrid {
             this.currentRows
         );
         
-        ctx.clearRect(0, 0, config.headerWidth, this.viewportHeight);
+        ctx.clearRect(0, 0, config.headerWidth, window.innerHeight);
         ctx.fillStyle = config.colors.headerBg;
-        ctx.fillRect(0, config.headerHeight, config.headerWidth, this.viewportHeight);
+        ctx.fillRect(0, 0, config.headerWidth, window.innerHeight);
         
         ctx.strokeStyle = config.colors.headerBorder;
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(config.headerWidth - 0.5, config.headerHeight);
+        ctx.moveTo(config.headerWidth - 0.5, 0);
         ctx.lineTo(config.headerWidth - 0.5, window.innerHeight);
         ctx.stroke();
         
@@ -410,22 +667,21 @@ export class ExcelGrid {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        console.log(this.scrollY);
         for (let row = startRow; row < endRow; row++) {
-            const y = config.headerHeight + (row * config.rowHeight) - this.scrollY;
-            if (y + config.rowHeight > config.headerHeight && y < this.viewportHeight) {
+            const y = (row * config.rowHeight) - this.scrollY + config.headerHeight;
+            if (y + config.rowHeight > 0 && y < this.viewportHeight) {
                 ctx.fillText(String(row + 1), config.headerWidth / 2, y + config.rowHeight / 2);
                 
                 ctx.beginPath();
                 ctx.moveTo(0, y + config.rowHeight - 0.5);
-                ctx.lineTo(config.columnWidth, y + config.rowHeight - 0.5);
+                ctx.lineTo(config.headerWidth, y + config.rowHeight - 0.5);
                 ctx.stroke();
             }
         }
     }
 
     /**
-     * Draws the corner header (intersection of row and column headers)
+     * Draws the corner header
      */
     drawCornerHeader() {
         const intersection = document.getElementById('top-left-intersection');
@@ -443,9 +699,11 @@ export class ExcelGrid {
         const activeTiles = this.canvasPool.activeTiles.size;
         const currentRow = Math.floor(this.scrollY / this.config.rowHeight) + 1;
         const currentCol = this.columnNumberToLetter(Math.floor(this.scrollX / this.config.columnWidth));
-
-        // Position: ${currentCol}${currentRow} | 
-        this.statusBar.textContent = `Max Reached: ${this.maxReachedRow} rows × ${this.maxReachedColumn} cols | Active Tiles: ${activeTiles}`;
+        const selectionText = this.selectionAnchor
+            ? `Selected: ${this.columnNumberToLetter(this.selectionAnchor.col)}${this.selectionAnchor.row + 1}`
+            : 'No selection';
+        
+        this.statusBar.textContent = `${selectionText} | Max Reached: ${this.maxReachedRow} rows × ${this.maxReachedColumn} cols | Active Tiles: ${activeTiles}`;
     }
 
     /**
@@ -455,18 +713,23 @@ export class ExcelGrid {
         this.drawColumnHeaders();
         this.drawRowHeaders();
         this.drawCornerHeader();
+
+        
     }
 
     /**
      * Scrolls the grid to display a specific cell
      */
-     scrollToCell(row, col) {
-        // Ensure content is loaded up to the target cell
+    scrollToCell(row, col) {
         if (row >= this.currentRows) {
             this.currentRows = Math.min(row + this.config.loadChunkRows, this.config.maxRows);
         }
         if (col >= this.currentColumns) {
             this.currentColumns = Math.min(col + this.config.loadChunkColumns, this.config.maxColumns);
+            this.store.updateColumns(this.currentColumns);
+            for (let c = this.currentColumns - this.config.loadChunkColumns; c < this.currentColumns; c++) {
+                this.columns.set(c, new Column(c, this.config.columnWidth));
+            }
         }
         
         const targetX = col * this.config.columnWidth;
@@ -476,23 +739,40 @@ export class ExcelGrid {
         this.canvasContainer.scrollTop = targetY;
     }
 
+    /**
+     * Gets the cell at the specified coordinates
+     * @param {number} x - X coordinate relative to canvas
+     * @param {number} y - Y coordinate relative to canvas
+     * @returns {{row: number, col: number, address: string} | null} Cell information
+     */
     getCurrentCell(x, y) {
-        const col = Math.floor(this.scrollX+x / this.config.columnWidth);
-        const row = Math.floor(this.scrollY+y / this.config.rowHeight);
-
-        // const row = Math.floor(y / this.config.rowHeight);
-        // const col = Math.floor(x / this.config.columnWidth);
+        if (x < 0 || y < 0) return null;
+        const col = Math.floor((this.scrollX + x) / this.config.columnWidth);
+        const row = Math.floor((this.scrollY + y) / this.config.rowHeight);
+        if (row >= this.currentRows || col >= this.currentColumns) return null;
         return { row, col, address: `${this.columnNumberToLetter(col)}${row + 1}` };
     }
 
-    // Method to reset the grid to initial size
+    /**
+     * Resets the grid to initial size
+     */
     resetToInitial() {
         this.currentRows = this.config.initialRows;
         this.currentColumns = this.config.initialColumns;
         this.maxReachedRow = this.config.initialRows;
         this.maxReachedColumn = this.config.initialColumns;
+        this.store = new Store(this.config.initialRows, this.config.initialColumns);
+        this.columns.clear();
+        for (let col = 0; col < this.config.initialColumns; col++) {
+            this.columns.set(col, new Column(col, this.config.columnWidth));
+        }
+        this.updateScrollContent();
         this.canvasContainer.scrollLeft = 0;
         this.canvasContainer.scrollTop = 0;
+        this.selectionAnchor = null;
+        this.selectionEnd = null;
+        this.removeSelectionDiv();
+        this.removeInputBox();
         this.updateViewport();
         this.render();
     }
