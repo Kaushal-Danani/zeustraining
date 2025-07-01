@@ -47,35 +47,3 @@ export const DEFAULT_CONFIG = {
     },
     font: '12px Arial'
 };
-/**
- * Default configuration object for the Excel Grid
- */
-//  export const DEFAULT_CONFIG = {
-//     rowHeight: 25,
-//     columnWidth: 100,
-//     headerHeight: 25,
-//     headerWidth: 50,
-//     maxRows: 100000,
-//     maxColumns: 800,
-//     initialRows: 100,
-//     initialColumns: 20,
-//     loadChunkRows: 20,
-//     loadChunkColumns: 8,
-//     tileSize: 800,
-//     loadThreshold: 0.9,
-//     contractThreshold: 0.2,
-//     minBuffer: 10,
-//     minRowHeight: 15,
-//     minColumnWidth: 30,
-//     colors: {
-//         gridLine: '#e0e0e0',
-//         headerBg: '#f5f5f5',
-//         headerText: '#333333',
-//         headerBorder: '#d0d0d0',
-//         cellBg: '#ffffff',
-//         cellText: '#000000',
-//         selectionBorder: '#0000FF',
-//         selectionFill: 'rgba(0, 0, 255, 0.1)'
-//     },
-//     font: '12px Arial'
-// };

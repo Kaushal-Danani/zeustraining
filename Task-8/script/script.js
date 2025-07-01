@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const mainContainer = document.getElementById('grid-container');
     const grid = new ExcelGrid(mainContainer);
 
-    window.excelGrid = grid;
+    // window.excelGrid = grid;
 
     console.log("What?")
 })

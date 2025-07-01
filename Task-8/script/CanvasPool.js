@@ -122,9 +122,9 @@ export class CanvasPool {
         const startRow = Math.floor(tileStartY / config.rowHeight);
         const endRow = Math.min(startRow + Math.ceil(this.tileSize / config.rowHeight) + 1, this.grid.currentRows);
 
-        ctx.font = config.font;
+        ctx.font = '16px Arial';
         // ctx.translate(0.5, 0.5);
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1 / window.devicePixelRatio;
         
         // Draw cells background
         ctx.fillStyle = config.colors.cellBg;
@@ -132,7 +132,6 @@ export class CanvasPool {
         
         // Draw vertical grid lines
         ctx.strokeStyle = config.colors.gridLine;
-        ctx.lineWidth = 1;
         ctx.beginPath();
         for (let col = startCol; col <= endCol; col++) {
             const gridX = (col * config.columnWidth);
@@ -161,7 +160,7 @@ export class CanvasPool {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         for (let row = startRow; row <= endRow; row++) {
-            for (let col = startCol; col <= endCol; col++) {
+            for (let col = startCol; col < endCol; col++) {
                 const cell = this.grid.store.getCell(row, col);
                 if (cell.value) {
                     const canvasX = (col * config.columnWidth) - tileStartX + 2;
