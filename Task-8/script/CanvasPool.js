@@ -164,8 +164,8 @@ export class CanvasPool {
             for (let col = startCol; col <= endCol; col++) {
                 const cell = this.grid.store.getCell(row, col);
                 if (cell.value) {
-                    const canvasX = (col * config.columnWidth) - tileStartX - this.grid.scrollX + 2;
-                    const canvasY = (row * config.rowHeight) - tileStartY - this.grid.scrollY + config.rowHeight / 2;
+                    const canvasX = (col * config.columnWidth) - tileStartX + 2;
+                    const canvasY = (row * config.rowHeight) - tileStartY + config.rowHeight / 2;
                     ctx.fillText(cell.value, canvasX, canvasY);
                 }
             }

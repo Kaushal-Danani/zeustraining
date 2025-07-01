@@ -41,7 +41,9 @@ export const DEFAULT_CONFIG = {
         cellBg: '#ffffff',
         cellText: '#000000',
         selectionBorder: '#137E41',
-        selectionFill: '#137E41'
+        selectionFill: '#137E41',
+        headerHighlight: '#CAEBD8',
+        headerHighlightBorder: '#137E41'
     },
     font: '12px Arial'
 };

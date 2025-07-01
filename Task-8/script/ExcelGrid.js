@@ -204,6 +204,7 @@ export class ExcelGrid {
                     this.selectionAnchor = { row: cell.row, col: cell.col };
                     this.selectionEnd = { row: cell.row, col: cell.col };
                 }
+                this.render();
                 this.updateSelectionDiv();
                 this.updateStatusBar();
             }
@@ -222,6 +223,7 @@ export class ExcelGrid {
                         cell.col
                     );
                     this.selectionEnd = { row: cell.row, col: cell.col };
+                    this.render();
                     this.updateSelectionDiv();
                     this.updateStatusBar();
                 }
@@ -302,14 +304,28 @@ export class ExcelGrid {
 
         this.selectionDiv = document.createElement('div');
         this.selectionDiv.style.position = 'absolute';
-        this.selectionDiv.style.width = `${(maxCol - minCol + 1) * this.config.columnWidth + 3}px`;
-        this.selectionDiv.style.height = `${(maxRow - minRow + 1) * this.config.rowHeight + 3}px`;
+        this.selectionDiv.style.width = `${(maxCol - minCol + 1) * this.config.columnWidth + 2}px`;
+        this.selectionDiv.style.height = `${(maxRow - minRow + 1) * this.config.rowHeight + 2}px`;
         this.selectionDiv.style.left = `${minCol * this.config.columnWidth - 1.5}px`;
-        this.selectionDiv.style.top = `${minRow * this.config.rowHeight - 1.5}px`;
+        this.selectionDiv.style.top = `${minRow * this.config.rowHeight - 2}px`;
+        
+        if ((maxCol - minCol) != 0 && (maxRow - minRow) != 0)
+            this.selectionDiv.style.backgroundColor = 'rgba(232, 242, 236, 0.6)';
+
         this.selectionDiv.style.border = `2px solid ${this.config.colors.selectionBorder}`;
         this.selectionDiv.style.zIndex = '900'; // Below input box (zIndex 1000)
-        this.selectionDiv.style.pointerEvents = 'none'; // Allow clicks to pass through
+        this.selectionDiv.style.pointerEvents = 'none';
 
+        const selectRect = document.createElement('div');
+        selectRect.style.position = 'relative';
+        selectRect.style.left = `${(maxCol - minCol + 1) * this.config.columnWidth - 3}px`
+        selectRect.style.top = `${(maxRow - minRow + 1) * this.config.rowHeight - 3}px`
+        selectRect.style.width = '4px';
+        selectRect.style.height = '4px';
+        selectRect.style.boxShadow = `0 0 0 1px white`;
+        selectRect.style.backgroundColor = this.config.colors.selectionBorder;
+
+        this.selectionDiv.appendChild(selectRect);
         this.canvasContainer.appendChild(this.selectionDiv);
     }
 
@@ -344,16 +360,16 @@ export class ExcelGrid {
         this.inputContainer.style.position = 'absolute';
         this.inputContainer.style.width = `${this.config.columnWidth}px`;
         this.inputContainer.style.height = `${this.config.rowHeight}px`;
-        this.inputContainer.style.left = `${cell.col * this.config.columnWidth - 2.5}px`;
-        this.inputContainer.style.top = `${cell.row * this.config.rowHeight - 2.5}px`;
+        this.inputContainer.style.left = `${cell.col * this.config.columnWidth - 2}px`;
+        this.inputContainer.style.top = `${cell.row * this.config.rowHeight - 2}px`;
         this.inputContainer.style.zIndex = '1000';
 
         // Create input element
         const input = document.createElement('input');
         input.type = 'text';
         input.style.all = 'unset';
-        input.style.width = `calc(100% - 3px)`;
-        input.style.height = '100%';
+        input.style.width = `calc(100% - 4px)`;
+        input.style.height = `calc(100% - 2px)`;
         input.style.padding = '0px 0px 0px 3px';
         input.style.margin = '0';
         input.style.border = '2px solid #137E41';
@@ -365,7 +381,6 @@ export class ExcelGrid {
         this.inputContainer.appendChild(input);
         this.canvasContainer.appendChild(this.inputContainer);
 
-        // Focus and select input content
         input.focus();
         input.select();
 
@@ -595,9 +610,9 @@ export class ExcelGrid {
     }
 
     /**
-     * Draws the horizontal column headers
+     * Draws the horizontal column headers with highlight for selected columns
      */
-    drawColumnHeaders() {
+     drawColumnHeaders() {
         const ctx = this.horizontalCtx;
         const config = this.config;
         
@@ -606,18 +621,37 @@ export class ExcelGrid {
             startCol + Math.ceil(this.viewportWidth / config.columnWidth) + 1,
             this.currentColumns
         );
+
+        // Determine selected column range
+        const selectedCols = new Set();
+        if (this.selectionAnchor && this.selectionEnd) {
+            const minCol = Math.min(this.selectionAnchor.col, this.selectionEnd.col);
+            const maxCol = Math.max(this.selectionAnchor.col, this.selectionEnd.col);
+            for (let col = minCol; col <= maxCol; col++) {
+                selectedCols.add(col);
+            }
+        }
         
-        ctx.clearRect(0, 0, window.innerWidth, config.headerHeight);
-        ctx.fillStyle = config.colors.headerBg;
-        ctx.fillRect(0, 0, window.innerWidth, config.headerHeight);
+        ctx.clearRect(0, 0, this.viewportWidth, config.headerHeight);
         
+        // Draw header backgrounds
+        for (let col = startCol; col < endCol; col++) {
+            const x = (col * config.columnWidth) - this.scrollX + config.headerWidth;
+            if (x + config.columnWidth > 0 && x < this.viewportWidth) {
+                ctx.fillStyle = selectedCols.has(col) ? config.colors.headerHighlight : config.colors.headerBg;
+                ctx.fillRect(x, 0, config.columnWidth, config.headerHeight);
+            }
+        }
+        
+        // Draw bottom border
         ctx.strokeStyle = config.colors.headerBorder;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(0, config.headerHeight - 0.5);
-        ctx.lineTo(window.innerWidth, config.headerHeight - 0.5);
+        ctx.lineTo(this.viewportWidth, config.headerHeight - 0.5);
         ctx.stroke();
         
+        // Draw vertical lines and text
         ctx.fillStyle = config.colors.headerText;
         ctx.font = config.font;
         ctx.textAlign = 'center';
@@ -630,16 +664,35 @@ export class ExcelGrid {
                 ctx.fillText(letter, x + config.columnWidth / 2, config.headerHeight / 2);
                 
                 ctx.strokeStyle = config.colors.headerBorder;
+                ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(x + config.columnWidth - 0.5, 0);
                 ctx.lineTo(x + config.columnWidth - 0.5, config.headerHeight);
                 ctx.stroke();
             }
         }
+
+        // Draw green bottom border for selected columns
+        if (selectedCols.size > 0) {
+            ctx.strokeStyle = config.colors.headerHighlightBorder;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let col = startCol; col < endCol; col++) {
+                if (selectedCols.has(col)) {
+                    const x = (col * config.columnWidth) - this.scrollX + config.headerWidth;
+                    if (x + config.columnWidth > 0 && x < this.viewportWidth) {
+                        ctx.moveTo(x - 1.5, config.headerHeight - 1);
+                        ctx.lineTo(x + config.columnWidth, config.headerHeight - 1);
+                    }
+                }
+            }
+            ctx.stroke();
+        }
+        
     }
 
     /**
-     * Draws the vertical row headers
+     * Draws the vertical row headers with highlight for selected rows
      */
     drawRowHeaders() {
         const ctx = this.verticalCtx;
@@ -650,18 +703,37 @@ export class ExcelGrid {
             startRow + Math.ceil(this.viewportHeight / config.rowHeight) + 1,
             this.currentRows
         );
+
+        // Determine selected row range
+        const selectedRows = new Set();
+        if (this.selectionAnchor && this.selectionEnd) {
+            const minRow = Math.min(this.selectionAnchor.row, this.selectionEnd.row);
+            const maxRow = Math.max(this.selectionAnchor.row, this.selectionEnd.row);
+            for (let row = minRow; row <= maxRow; row++) {
+                selectedRows.add(row);
+            }
+        }
         
-        ctx.clearRect(0, 0, config.headerWidth, window.innerHeight);
-        ctx.fillStyle = config.colors.headerBg;
-        ctx.fillRect(0, 0, config.headerWidth, window.innerHeight);
+        ctx.clearRect(0, 0, config.headerWidth, this.viewportHeight);
         
+        // Draw header backgrounds
+        for (let row = startRow; row < endRow; row++) {
+            const y = (row * config.rowHeight) - this.scrollY + config.headerHeight;
+            if (y + config.rowHeight > 0 && y < this.viewportHeight) {
+                ctx.fillStyle = selectedRows.has(row) ? config.colors.headerHighlight : config.colors.headerBg;
+                ctx.fillRect(0, y, config.headerWidth, config.rowHeight);
+            }
+        }
+        
+        // Draw right border
         ctx.strokeStyle = config.colors.headerBorder;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(config.headerWidth - 0.5, 0);
-        ctx.lineTo(config.headerWidth - 0.5, window.innerHeight);
+        ctx.lineTo(config.headerWidth - 0.5, this.viewportHeight);
         ctx.stroke();
         
+        // Draw horizontal lines and text
         ctx.fillStyle = config.colors.headerText;
         ctx.font = config.font;
         ctx.textAlign = 'center';
@@ -672,12 +744,32 @@ export class ExcelGrid {
             if (y + config.rowHeight > 0 && y < this.viewportHeight) {
                 ctx.fillText(String(row + 1), config.headerWidth / 2, y + config.rowHeight / 2);
                 
+                ctx.strokeStyle = config.colors.headerBorder;
+                ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(0, y + config.rowHeight - 0.5);
                 ctx.lineTo(config.headerWidth, y + config.rowHeight - 0.5);
                 ctx.stroke();
             }
         }
+
+        // Draw green bottom border for selected rows
+        if (selectedRows.size > 0) {
+            ctx.strokeStyle = config.colors.headerHighlightBorder;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            for (let row = startRow; row < endRow; row++) {
+                if (selectedRows.has(row)) {
+                    const y = (row * config.rowHeight) - this.scrollY + config.headerHeight;
+                    if (y + config.rowHeight > 0 && y < this.viewportHeight) {
+                        ctx.moveTo(config.headerWidth, y - 1.5);
+                        ctx.lineTo(config.headerWidth, y + config.rowHeight );
+                    }
+                }
+            }
+            ctx.stroke();
+        }
+        
     }
 
     /**
