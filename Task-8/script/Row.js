@@ -1,4 +1,5 @@
 import { Cell } from "./Cell.js";
+import { DEFAULT_CONFIG } from "./config.js";
 
 /**
  * Represents a row in the grid
@@ -9,17 +10,28 @@ import { Cell } from "./Cell.js";
      * @param {number} rowIndex - Row index (0-based)
      * @param {number} numColumns - Number of columns in the row
      */
-    constructor(rowIndex, numColumns) {
+    constructor(rowIndex, numColumns, height = DEFAULT_CONFIG.rowHeight) {
         /** @type {number} Row index */
         this.rowIndex = rowIndex;
+
+        /** @type {number} Row height */
+        this.height = height;
         
         /** @type {Map<number, Cell>} Map of column index to Cell */
         this.cells = new Map();
-        
+
         // Initialize cells for the row
         for (let col = 0; col < numColumns; col++) {
             this.cells.set(col, new Cell(rowIndex, col));
         }
+    }
+
+    /**
+    * Sets the row height
+    * @param {number} height - New height in pixels
+    */
+    setHeight(height) {
+        this.height = height;
     }
 
     /**

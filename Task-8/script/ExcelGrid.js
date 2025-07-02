@@ -219,11 +219,12 @@ export class ExcelGrid {
                     this.store.setSelectionRange(
                         this.selectionAnchor.row,
                         this.selectionAnchor.col,
-                        cell.row,
+                        cell.row,   
                         cell.col
                     );
                     this.selectionEnd = { row: cell.row, col: cell.col };
                     this.render();
+                    this.scrollToCell(cell.row, this.selectionAnchor.row, cell.col, this.selectionAnchor.col);
                     this.updateSelectionDiv();
                     this.updateStatusBar();
                 }
@@ -247,11 +248,26 @@ export class ExcelGrid {
         // Keyboard navigation
         window.addEventListener('keydown', (e) => {
             if (!this.selectionAnchor) return;
+
+            // Check if the key is alphanumeric or a special character
+            const isAlphanumericOrSpecial = /^[a-zA-Z0-9`~!@#$%^&*()_+\-=\[\]{}\\|;:'",.<>\/?]$/.test(e.key);
+            if (isAlphanumericOrSpecial && !this.isSelected) {
+                e.preventDefault();
+                this.isSelected = true;
+                this.createInputBox(this.selectionAnchor, e.key);
+                return;
+            }
+
             let newRow = this.selectionAnchor.row;
             let newCol = this.selectionAnchor.col;
             let oldRow, oldCol;
 
             switch (e.key) {
+                case 'Tab':
+                    e.preventDefault();
+                    oldCol = newCol;
+                    newCol = Math.min(this.currentColumns - 1, newCol + 1);
+                    break;
                 case 'ArrowUp':
                     e.preventDefault();
                     oldRow = newRow;
@@ -279,11 +295,6 @@ export class ExcelGrid {
                         this.updateSelectionDiv();
                         this.isSelected = false;
                     }
-                    break;
-                default:
-                    e.preventDefault();
-                    this.isSelected = true;
-                    this.createInputBox({row: newRow, col: newCol});
                     break;
                 }
 
@@ -322,7 +333,7 @@ export class ExcelGrid {
         this.selectionDiv.style.top = `${minRow * this.config.rowHeight - 2}px`;
         
         if (!((maxCol - minCol) == 0 && (maxRow - minRow) == 0))
-            this.selectionDiv.style.backgroundColor = 'rgba(232, 242, 236, 0.6)';
+            this.selectionDiv.style.backgroundColor = this.config.colors.selectRangeColor;
 
         this.selectionDiv.style.border = `2px solid ${this.config.colors.selectionBorder}`;
         this.selectionDiv.style.zIndex = '900'; // Below input box (zIndex 1000)
@@ -361,12 +372,11 @@ export class ExcelGrid {
     /**
      * Creates an input box for editing a cell
      * @param {{row: number, col: number}} cell - The cell to edit
+     * @param {string} [initialValue=''] - Initial value for the input box
      */
-    createInputBox(cell) {
-        // Remove existing input box and selection div
-        console.log(cell);
-        // this.removeInputBox();
+     createInputBox(cell, initialValue = '') {
         this.removeSelectionDiv();
+        this.removeInputBox();
 
         // Create input container
         this.inputContainer = document.createElement('div');
@@ -386,16 +396,16 @@ export class ExcelGrid {
         input.style.padding = '0px 0px 0px 3px';
         input.style.margin = '0';
         input.style.border = '2px solid #137E41';
-        input.style.background = 'transparent';
+        input.style.background = 'white';
         input.style.font = `16px Arial`;
         input.style.color = this.config.colors.cellText;
-        input.value = this.store.getCell(cell.row, cell.col).value || '';
+        input.value = initialValue || this.store.getCell(cell.row, cell.col).value || '';
 
         this.inputContainer.appendChild(input);
         this.canvasContainer.appendChild(this.inputContainer);
 
         input.focus();
-        input.select();
+        // input.select();
 
         // Save value on Enter or blur
         const saveValue = () => {
@@ -411,12 +421,14 @@ export class ExcelGrid {
                 this.removeInputBox();
                 this.canvasPool.renderTiles();
                 this.isSelected = false;
-                // this.createSelectionDiv();
             }
             if (e.key === 'Escape') {
                 this.removeInputBox();
-                this.canvasPool.renderTiles(); // Render only affected tiles
-                this.createSelectionDiv(); // Restore selection div
+                this.canvasPool.renderTiles();
+                this.createSelectionDiv();
+            }
+            if (e.key === 'Tab') {
+                this.removeInputBox();
             }
         });
 
@@ -459,6 +471,7 @@ export class ExcelGrid {
         if (verticalScrollPercentage >= threshold && !this.isLoadingRows && this.currentRows < this.config.maxRows) {
             this.loadMoreRows();
         } else if (this.scrollY <= 0) {
+            // this.resetToInitial();
             this.contractRows();
         }
         
@@ -701,7 +714,7 @@ export class ExcelGrid {
                     const x = (col * config.columnWidth) - this.scrollX + config.headerWidth;
                     if (x + config.columnWidth > 0 && x < this.viewportWidth) {
                         ctx.moveTo(x - 1.5, config.headerHeight - 1);
-                        ctx.lineTo(x + config.columnWidth, config.headerHeight - 1);
+                        ctx.lineTo(x + config.columnWidth + 0.5, config.headerHeight - 1);
                     }
                 }
             }
@@ -781,8 +794,8 @@ export class ExcelGrid {
                 if (selectedRows.has(row)) {
                     const y = (row * config.rowHeight) - this.scrollY + config.headerHeight;
                     if (y + config.rowHeight > 0 && y < this.viewportHeight) {
-                        ctx.moveTo(config.headerWidth, y - 1.5);
-                        ctx.lineTo(config.headerWidth, y + config.rowHeight );
+                        ctx.moveTo(config.headerWidth, y - 2);
+                        ctx.lineTo(config.headerWidth, y + config.rowHeight);
                     }
                 }
             }
@@ -821,9 +834,9 @@ export class ExcelGrid {
      * Main render method that draws all grid components
      */
     render() {
+        this.drawCornerHeader();
         this.drawColumnHeaders();
         this.drawRowHeaders();
-        this.drawCornerHeader();
     }
 
     /**
@@ -843,7 +856,7 @@ export class ExcelGrid {
         // }
 
         let targetX, targetY;
-        console.log((row), (Math.ceil(this.canvasContainer.scrollTop) - (row * this.config.rowHeight)) );
+        // console.log((row * this.config.rowHeight), (Math.ceil(this.canvasContainer.scrollTop)), this.canvasContainer.clientHeight );
         if ((row > oldRow) && ((row+1) * this.config.rowHeight) >= (Math.floor(this.canvasContainer.scrollTop) + this.canvasContainer.clientHeight)) {
             const variation = ((row * this.config.rowHeight) - (Math.floor(this.canvasContainer.scrollTop) + this.canvasContainer.clientHeight));
 

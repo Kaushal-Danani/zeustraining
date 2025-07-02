@@ -5,6 +5,4 @@ document.addEventListener("DOMContentLoaded", () => {
     const grid = new ExcelGrid(mainContainer);
 
     // window.excelGrid = grid;
-
-    console.log("What?")
 })

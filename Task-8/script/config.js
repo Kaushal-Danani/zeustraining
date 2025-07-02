@@ -43,7 +43,8 @@ export const DEFAULT_CONFIG = {
         selectionBorder: '#137E41',
         selectionFill: '#137E41',
         headerHighlight: '#CAEBD8',
-        headerHighlightBorder: '#137E41'
+        headerHighlightBorder: '#137E41',
+        selectRangeColor: `rgba(232, 242, 236, 0.6)`
     },
     font: '12px Arial'
 };
