@@ -14,8 +14,6 @@ export class CanvasPool {
         this.activeTiles = new Map();
         this.canvasPool = [];
         this.tileSize = options.tileSize || 800;
-        this.rowsPerTile = Math.floor(this.tileSize / grid.config.rowHeight);
-        this.colsPerTile = Math.floor(this.tileSize / grid.config.columnWidth);
         this.container = grid.canvasContainer;
     }
 
@@ -117,13 +115,34 @@ export class CanvasPool {
         const tileStartX = tileX * this.tileSize;
         const tileStartY = tileY * this.tileSize;
         
-        const startCol = Math.floor(tileStartX / config.columnWidth);
-        const endCol = Math.min(startCol + Math.ceil(this.tileSize / config.columnWidth) + 1, this.grid.currentColumns);
-        const startRow = Math.floor(tileStartY / config.rowHeight);
-        const endRow = Math.min(startRow + Math.ceil(this.tileSize / config.rowHeight) + 1, this.grid.currentRows);
+        // Calculate column and row ranges based on variable widths and heights
+        let startCol = 0;
+        let endCol = 0;
+        let colX = 0;
+        for (let col = 0; col < this.grid.currentColumns; col++) {
+            const colWidth = this.grid.columns.get(col)?.width || config.columnWidth;
+            if (colX >= tileStartX - colWidth && colX <= tileStartX + this.tileSize) {
+                if (!startCol && colX >= tileStartX) startCol = col;
+                endCol = col + 1;
+            }
+            colX += colWidth;
+        }
+        endCol = Math.min(endCol, this.grid.currentColumns);
+
+        let startRow = 0;
+        let endRow = 0;
+        let rowY = 0;
+        for (let row = 0; row < this.grid.currentRows; row++) {
+            const rowHeight = this.grid.store.rows.get(row)?.height || config.rowHeight;
+            if (rowY >= tileStartY - rowHeight && rowY <= tileStartY + this.tileSize) {
+                if (!startRow && rowY >= tileStartY) startRow = row;
+                endRow = row + 1;
+            }
+            rowY += rowHeight;
+        }
+        endRow = Math.min(endRow, this.grid.currentRows);
 
         ctx.font = '16px Arial';
-        // ctx.translate(0.5, 0.5);
         ctx.lineWidth = 1 / window.devicePixelRatio;
         
         // Draw cells background
@@ -133,25 +152,29 @@ export class CanvasPool {
         // Draw vertical grid lines
         ctx.strokeStyle = config.colors.gridLine;
         ctx.beginPath();
-        for (let col = startCol; col <= endCol; col++) {
-            const gridX = (col * config.columnWidth);
-            const canvasX = gridX - tileStartX;
+        colX = -tileStartX;
+        for (let col = 0; col < this.grid.currentColumns; col++) {
+            const colWidth = this.grid.columns.get(col)?.width || config.columnWidth;
+            const canvasX = colX + colWidth;
             if (canvasX >= -1 && canvasX <= this.tileSize + 1) {
                 ctx.moveTo(canvasX - 0.5, 0);
                 ctx.lineTo(canvasX - 0.5, this.tileSize);
             }
+            colX += colWidth;
         }
         ctx.stroke();
         
         // Draw horizontal grid lines
         ctx.beginPath();
-        for (let row = startRow; row <= endRow; row++) {
-            const gridY = (row * config.rowHeight);
-            const canvasY = gridY - tileStartY;
+        rowY = -tileStartY;
+        for (let row = 0; row < this.grid.currentRows; row++) {
+            const rowHeight = this.grid.store.rows.get(row)?.height || config.rowHeight;
+            const canvasY = rowY + rowHeight;
             if (canvasY >= -1 && canvasY <= this.tileSize + 1) {
                 ctx.moveTo(0, canvasY - 0.5);
                 ctx.lineTo(this.tileSize, canvasY - 0.5);
             }
+            rowY += rowHeight;
         }
         ctx.stroke();
         
@@ -159,15 +182,21 @@ export class CanvasPool {
         ctx.fillStyle = config.colors.cellText;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        for (let row = startRow; row <= endRow; row++) {
+        rowY = -tileStartY;
+        for (let row = startRow; row < endRow; row++) {
+            const rowHeight = this.grid.store.rows.get(row)?.height || config.rowHeight;
+            colX = -tileStartX;
             for (let col = startCol; col < endCol; col++) {
+                const colWidth = this.grid.columns.get(col)?.width || config.columnWidth;
                 const cell = this.grid.store.getCell(row, col);
                 if (cell.value) {
-                    const canvasX = (col * config.columnWidth) - tileStartX + 2;
-                    const canvasY = (row * config.rowHeight) - tileStartY + config.rowHeight / 2;
+                    const canvasX = colX + 2;
+                    const canvasY = rowY + rowHeight / 2;
                     ctx.fillText(cell.value, canvasX, canvasY);
                 }
+                colX += colWidth;
             }
+            rowY += rowHeight;
         }
     }
 

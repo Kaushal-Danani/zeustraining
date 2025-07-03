@@ -47,6 +47,7 @@ export class Store {
      */
     setCellValue(row, col, value) {
         const rowObj = this.rows.get(row) || new Row(row, this.numColumns);
+        console.log(rowObj);
         rowObj.setCellValue(col, value);
         this.rows.set(row, rowObj);
     }

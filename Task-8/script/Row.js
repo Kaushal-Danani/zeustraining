@@ -4,7 +4,7 @@ import { DEFAULT_CONFIG } from "./config.js";
 /**
  * Represents a row in the grid
  */
- export class Row {
+export class Row {
     /**
      * Initializes a row
      * @param {number} rowIndex - Row index (0-based)
@@ -27,11 +27,11 @@ import { DEFAULT_CONFIG } from "./config.js";
     }
 
     /**
-    * Sets the row height
-    * @param {number} height - New height in pixels
-    */
+     * Sets the row height
+     * @param {number} height - New height in pixels
+     */
     setHeight(height) {
-        this.height = height;
+        this.height = Math.max(1, height); // Ensure height is at least 1 pixel
     }
 
     /**

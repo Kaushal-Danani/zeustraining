@@ -15,10 +15,12 @@
  * @property {number} loadThreshold - Scroll threshold for loading more content
  * @property {number} contractThreshold - Scroll threshold for contracting content
  * @property {number} minBuffer - Minimum buffer to maintain when contracting
+ * @property {number} resizerSize - Size of the resize handle in pixels
+ * @property {string} resizerColor - Color of the resize handle
  * @property {Object} colors - Color configuration object
  * @property {string} font - Font configuration string
  */
-export const DEFAULT_CONFIG = {
+ export const DEFAULT_CONFIG = {
     rowHeight: 25,
     columnWidth: 100,
     headerHeight: 25,
@@ -31,8 +33,10 @@ export const DEFAULT_CONFIG = {
     loadChunkColumns: 8,
     tileSize: 800,
     loadThreshold: 0.8,
-    contractThreshold: 0.2, 
-    minBuffer: 10,       
+    contractThreshold: 0.2,
+    minBuffer: 10,
+    resizerSize: 4, // Size of resize handle
+    resizerColor: '#137E41', // Color for resize handle and dashed line
     colors: {
         gridLine: '#e0e0e0',
         headerBg: '#f5f5f5',
