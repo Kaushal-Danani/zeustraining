@@ -86,6 +86,11 @@ body {
     border-bottom: 1px solid #ccc;
 }
 
+.highligh-selected {
+    background-color: #107c41;
+    opacity: 0.1;
+}
+
 .resize-handles-row, .resize-handles-col {
     position: absolute;
     top: 0;

@@ -304,7 +304,7 @@ export class ExcelGrid {
             if (currentResizer.classList.contains('column-resizer')) {
                 const deltaX = e.clientX - startX;
                 const colIndex = parseInt(currentResizer.dataset.colIndex);
-                const newWidth = Math.max(0, (startWidth + deltaX));
+                const newWidth = Math.max(0.5, (startWidth + deltaX));
                 currentResizer.style.left = `${(startX + deltaX)}px`;
                 if (dashedLine && (e.clientX > (startX - startWidth))) {
                     dashedLine.style.left = `${(startX + deltaX)}px`; // Sync with new width
@@ -314,7 +314,7 @@ export class ExcelGrid {
             } else {
                 const deltaY = e.clientY - startY;
                 const rowIndex = parseInt(currentResizer.dataset.rowIndex);
-                const newHeight = Math.max(0, startHeight + deltaY);
+                const newHeight = Math.max(0.5, startHeight + deltaY);
                 currentResizer.style.top = `${startY + deltaY}px`;
                 if (dashedLine && (e.clientY > (startY - startHeight))) {
                     dashedLine.style.top = `${startY + deltaY}px`; // Sync with new height
@@ -332,12 +332,12 @@ export class ExcelGrid {
             if (currentResizer.classList.contains('column-resizer')) {
                 const colIndex = parseInt(currentResizer.dataset.colIndex);
                 const deltaX = e.clientX - startX;
-                const newWidth = Math.max(0, (startWidth + deltaX));
+                const newWidth = Math.max(0.5, (startWidth + deltaX));
                 this.columns.get(colIndex).setWidth(newWidth);
             } else {
                 const rowIndex = parseInt(currentResizer.dataset.rowIndex);
                 const deltaY = e.clientY - startY;
-                const newHeight = Math.max(0, startHeight + deltaY);
+                const newHeight = Math.max(0.5, startHeight + deltaY);
                 this.store.rows.get(rowIndex).setHeight(newHeight);
             }
 
@@ -638,7 +638,7 @@ export class ExcelGrid {
         colX = this.config.headerWidth - this.scrollX;
         for (col = 0; col < endCol; col++) {
             const colWidth = this.columns.get(col)?.width || this.config.columnWidth;
-            if (colX + colWidth > 0 && colX < this.viewportWidth) {
+            if (colX + colWidth > 0 && colX < this.viewportWidth && colWidth > 5) {
                 const letter = this.columnNumberToLetter(col);
                 ctx.fillText(letter, colX + colWidth / 2, config.headerHeight / 2);
                 
@@ -679,7 +679,6 @@ export class ExcelGrid {
         const ctx = this.verticalCtx;
         const config = this.config;
         
-        let startRow = 0;
         let rowY = this.config.headerHeight - this.scrollY;
         let row = 0;
         while (rowY < this.viewportHeight && row < this.currentRows) {
@@ -720,7 +719,7 @@ export class ExcelGrid {
         rowY = this.config.headerHeight - this.scrollY;
         for (row = 0; row < endRow; row++) {
             const rowHeight = this.store.rows.get(row)?.height || this.config.rowHeight;
-            if (rowY + rowHeight > 0 && rowY < this.viewportHeight) {
+            if (rowY + rowHeight > 0 && rowY < this.viewportHeight && rowHeight > 5) {
                 ctx.fillText(String(row+1), config.headerWidth - ctx.measureText(row+1).width - 5, rowY + rowHeight / 2);
                 
                 ctx.strokeStyle = config.colors.headerBorder;

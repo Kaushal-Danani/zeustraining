@@ -20,6 +20,6 @@
      * @param {number} width - New width in pixels
      */
     setWidth(width) {
-        this.width = Math.max(1, width); // Ensure width is at least 1 pixel
+        this.width = Math.max(0.5, width); // Ensure width is at least 1 pixel
     }
 }

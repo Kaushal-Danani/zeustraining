@@ -156,7 +156,7 @@ export class CanvasPool {
         for (let col = 0; col < this.grid.currentColumns; col++) {
             const colWidth = this.grid.columns.get(col)?.width || config.columnWidth;
             const canvasX = colX + colWidth;
-            if (canvasX >= -1 && canvasX <= this.tileSize + 1) {
+            if (canvasX >= -1 && canvasX <= this.tileSize + 1 && colWidth > 5) {
                 ctx.moveTo(canvasX - 0.5, 0);
                 ctx.lineTo(canvasX - 0.5, this.tileSize);
             }
@@ -170,7 +170,7 @@ export class CanvasPool {
         for (let row = 0; row < this.grid.currentRows; row++) {
             const rowHeight = this.grid.store.rows.get(row)?.height || config.rowHeight;
             const canvasY = rowY + rowHeight;
-            if (canvasY >= -1 && canvasY <= this.tileSize + 1) {
+            if (canvasY >= -1 && canvasY <= this.tileSize + 1 && rowHeight > 5) {
                 ctx.moveTo(0, canvasY - 0.5);
                 ctx.lineTo(this.tileSize, canvasY - 0.5);
             }
