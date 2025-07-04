@@ -29,7 +29,10 @@
      * Creates a selection div for the current selection range
      */
     createSelectionDiv() {
-        this.removeSelectionDiv();
+        if (this.selectionDiv) {
+            this.selectionDiv.remove();
+            this.selectionDiv = null;
+        }
 
         if (!this.startCell || !this.endCell) return;
 
@@ -105,7 +108,7 @@
                         true
                     );
                     this.createSelectionDiv();
-                    this.grid.scrollToCell(cell.row, this.startCell.row, cell.col, this.startCell.col);
+                    // this.grid.scrollToCell(cell.row, this.startCell.row, cell.col, this.startCell.col);
                     this.updateSelectionDivPosition(this.grid.scrollX, this.grid.scrollY);
                     this.grid.updateStatusBar();
                     this.grid.render();
@@ -135,7 +138,7 @@
             }
         });
 
-        this.canvasContainer.addEventListener('keydown', (e) => {
+        window.addEventListener('keydown', (e) => {
             if (this.isEditing) return;
 
             // Handle alphanumeric or special character input to start editing
@@ -157,7 +160,12 @@
             switch (e.key) {
                 case 'Tab':
                     e.preventDefault();
-                    newCol = Math.min(this.grid.currentColumns - 1, newCol + 1);
+                    if (e.shiftKey) {
+                        newCol = Math.max(0, newCol - 1);
+                    }
+                    else {
+                        newCol = Math.min(this.grid.currentColumns - 1, newCol + 1)
+                    }
                     break;
                 case 'ArrowUp':
                     e.preventDefault();
@@ -182,13 +190,16 @@
                 default:
                     return;
             }
+
+            if (newRow === this.startCell.row && newCol === this.startCell.col)
+                return;
             
             this.store.clearSelections();
-            this.startCell = { row: newRow, col: newCol, address: `${this.grid.columnNumberToLetter(newCol)}${newRow + 1}` };
-            this.endCell = this.startCell;
             this.store.setSelectionRange(newRow, newCol, newRow, newCol, true);
             this.createSelectionDiv();
             this.grid.scrollToCell(newRow, this.startCell.row, newCol, this.startCell.col);
+            this.startCell = { row: newRow, col: newCol, address: `${this.grid.columnNumberToLetter(newCol)}${newRow + 1}` };
+            this.endCell = this.startCell;
             this.updateSelectionDivPosition(this.grid.scrollX, this.grid.scrollY);
             this.grid.updateStatusBar();
             this.grid.render();
@@ -257,7 +268,7 @@
         const saveValue = () => {
             this.store.setCellValue(cell.row+1, cell.col+1, inputBox.value);
             this.isEditing = false;
-            this.selectionDiv.removeChild(inputBox);
+            this.removeSelectionDiv();
             this.grid.canvasPool.renderTiles();
             this.grid.render();
         };
@@ -276,7 +287,9 @@
                 this.grid.updateStatusBar();
             } else if (e.key === 'Escape') {
                 this.isEditing = false;
-                this.selectionDiv.removeChild(inputBox);
+                this.store.clearSelections();
+                this.removeSelectionDiv();
+                this.updateSelectionDivPosition();
                 this.grid.canvasPool.renderTiles();
                 this.grid.render();
             } else if (e.key === 'Tab') {
@@ -300,7 +313,7 @@
      * @param {number} scrollX - Current horizontal scroll position
      * @param {number} scrollY - Current vertical scroll position
      */
-    updateSelectionDivPosition(scrollX, scrollY) {
+    updateSelectionDivPosition(scrollX = 0, scrollY = 0) {
         if (!this.startCell || !this.endCell) {
             this.removeSelectionDiv();
             return;
@@ -347,8 +360,8 @@
 
             const selectRect = document.createElement('div');
             selectRect.style.position = 'absolute';
-            selectRect.style.left = `${width - 2.5}px`;
-            selectRect.style.top = `${height - 2.5}px`;
+            selectRect.style.left = `${width - 2}px`;
+            selectRect.style.top = `${height - 2}px`;
             selectRect.style.width = '4px';
             selectRect.style.height = '4px';
             selectRect.style.boxShadow = `0 0 0 1px white`;

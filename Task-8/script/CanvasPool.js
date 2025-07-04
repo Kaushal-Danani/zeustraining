@@ -190,8 +190,15 @@ export class CanvasPool {
                 const colWidth = this.grid.columns.get(col)?.width || config.columnWidth;
                 const cell = this.grid.store.getCell(row, col);
                 if (cell.value) {
-                    const canvasX = colX + 2;
-                    const canvasY = rowY + rowHeight / 2;
+                    let canvasX, canvasY;
+                    if (isNaN(cell.value)) {
+                        canvasX = colX + 2;
+                        canvasY = rowY + rowHeight / 2;
+                    }
+                    else {
+                        canvasX = colX + colWidth - ctx.measureText(cell.value).width - 2;
+                        canvasY = rowY + rowHeight / 2;
+                    }
                     ctx.fillText(cell.value, canvasX, canvasY);
                 }
                 colX += colWidth;

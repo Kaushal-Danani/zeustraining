@@ -259,6 +259,8 @@ export class ExcelGrid {
         let dashedLine = null;
 
         const startResize = (e) => {
+            if (e.button === 1 || e.button === 2) return;
+
             isResizing = true;
             currentResizer = e.target;
             startX = e.clientX;
@@ -297,42 +299,45 @@ export class ExcelGrid {
         };
 
         const resize = (e) => {
-            if (!isResizing) return;
+            if (e.button == 1 || e.button == 2 || !isResizing) return;
             
             if (currentResizer.classList.contains('column-resizer')) {
                 const deltaX = e.clientX - startX;
                 const colIndex = parseInt(currentResizer.dataset.colIndex);
-                const newWidth = Math.max(1, (startWidth + deltaX));
-                this.columns.get(colIndex).setWidth(newWidth);
+                const newWidth = Math.max(0, (startWidth + deltaX));
                 currentResizer.style.left = `${(startX + deltaX)}px`;
-                if (dashedLine) {
+                if (dashedLine && (e.clientX > (startX - startWidth))) {
                     dashedLine.style.left = `${(startX + deltaX)}px`; // Sync with new width
                 }
+                this.columns.get(colIndex).setWidth(newWidth);
                 this.drawColumnHeaders();
             } else {
                 const deltaY = e.clientY - startY;
                 const rowIndex = parseInt(currentResizer.dataset.rowIndex);
-                const newHeight = Math.max(1, startHeight + deltaY);
-                this.store.rows.get(rowIndex).setHeight(newHeight);
+                const newHeight = Math.max(0, startHeight + deltaY);
                 currentResizer.style.top = `${startY + deltaY}px`;
-                if (dashedLine) {
+                if (dashedLine && (e.clientY > (startY - startHeight))) {
                     dashedLine.style.top = `${startY + deltaY}px`; // Sync with new height
                 }
+                this.store.rows.get(rowIndex).setHeight(newHeight);
                 this.drawRowHeaders();
             }
 
         };
 
         const stopResize = (e) => {
+            if (e.button === 1 || e.button === 2)
+                return;
+                
             if (currentResizer.classList.contains('column-resizer')) {
                 const colIndex = parseInt(currentResizer.dataset.colIndex);
                 const deltaX = e.clientX - startX;
-                const newWidth = Math.max(1, (startWidth + deltaX));
+                const newWidth = Math.max(0, (startWidth + deltaX));
                 this.columns.get(colIndex).setWidth(newWidth);
             } else {
                 const rowIndex = parseInt(currentResizer.dataset.rowIndex);
                 const deltaY = e.clientY - startY;
-                const newHeight = Math.max(1, startHeight + deltaY);
+                const newHeight = Math.max(0, startHeight + deltaY);
                 this.store.rows.get(rowIndex).setHeight(newHeight);
             }
 
@@ -567,7 +572,7 @@ export class ExcelGrid {
         this.canvasPool.updateVisibleTiles(this.scrollX, this.scrollY, this.viewportWidth, this.viewportHeight);
         this.updateStatusBar();
         this.selection.updateInputBoxPosition();
-        this.setupResizeHandles();
+        // this.setupResizeHandles();
     }
 
     /**
@@ -657,8 +662,8 @@ export class ExcelGrid {
                 const colWidth = this.columns.get(col)?.width || this.config.columnWidth;
                 if (selectedCols.has(col)) {
                     if (colX + colWidth > 0 && colX < this.viewportWidth) {
-                        ctx.moveTo(colX - 1.5, config.headerHeight - 1);
-                        ctx.lineTo(colX + colWidth + 0.5, config.headerHeight - 1);
+                        ctx.moveTo(colX - 2, config.headerHeight - 1);
+                        ctx.lineTo(colX + colWidth + 1, config.headerHeight - 1);
                     }
                 }
                 colX += colWidth;
@@ -704,20 +709,19 @@ export class ExcelGrid {
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(config.headerWidth - 0.5, 0);
-        ctx.lineTo(config.headerWidth - 0.5, this.viewportHeight);
+        ctx.lineTo(config.headerWidth - 0.5, window.innerHeight);
         ctx.stroke();
         
         // Draw horizontal lines and text
         ctx.fillStyle = config.colors.headerText;
         ctx.font = config.font;
-        ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
         rowY = this.config.headerHeight - this.scrollY;
         for (row = 0; row < endRow; row++) {
             const rowHeight = this.store.rows.get(row)?.height || this.config.rowHeight;
             if (rowY + rowHeight > 0 && rowY < this.viewportHeight) {
-                ctx.fillText(String(row + 1), config.headerWidth - 20, rowY + rowHeight / 2);
+                ctx.fillText(String(row+1), config.headerWidth - ctx.measureText(row+1).width - 5, rowY + rowHeight / 2);
                 
                 ctx.strokeStyle = config.colors.headerBorder;
                 ctx.lineWidth = 1 / window.devicePixelRatio;
@@ -740,7 +744,7 @@ export class ExcelGrid {
                 if (selectedRows.has(row)) {
                     if (rowY + rowHeight > 0 && rowY < this.viewportHeight) {
                         ctx.moveTo(config.headerWidth, rowY - 2);
-                        ctx.lineTo(config.headerWidth, rowY + rowHeight);
+                        ctx.lineTo(config.headerWidth, rowY + rowHeight + 1);
                     }
                 }
                 rowY += rowHeight;
@@ -781,7 +785,6 @@ export class ExcelGrid {
             currentCol++;
         }
         currentCol = Math.min(currentCol, this.currentColumns - 1);
-        const currentColLetter = this.columnNumberToLetter(currentCol);
         
         const selectionText = this.selection.getSelectionText(this.columnNumberToLetter.bind(this));
         
@@ -808,7 +811,7 @@ export class ExcelGrid {
             currentRowY += this.store.rows.get(i)?.height || this.config.rowHeight;
         }
         let oldRowY = 0;
-        for (let i = 0; i < oldRow; i++) {
+        for (let i = 0; i <= oldRow; i++) {
             oldRowY += this.store.rows.get(i)?.height || this.config.rowHeight;
         }
         let currentColX = 0;
@@ -816,15 +819,15 @@ export class ExcelGrid {
             currentColX += this.columns.get(i)?.width || this.config.columnWidth;
         }
         let oldColX = 0;
-        for (let i = 0; i < oldCol; i++) {
+        for (let i = 0; i <= oldCol; i++) {
             oldColX += this.columns.get(i)?.width || this.config.columnWidth;
         }
         
-        if ((row > oldRow) && ((currentRowY + (this.store.rows.get(row)?.height || this.config.rowHeight)) >= (Math.floor(this.canvasContainer.scrollTop) + this.canvasContainer.clientHeight))) {
-            const variation = ((currentRowY) - (Math.floor(this.canvasContainer.scrollTop) + this.canvasContainer.clientHeight));
+        if ((row > oldRow) && ((currentRowY + (this.store.rows.get(row)?.height || this.config.rowHeight)) > (Math.floor(this.canvasContainer.scrollTop) + this.canvasContainer.clientHeight))) {
             const rowHeight = this.store.rows.get(row)?.height || this.config.rowHeight;
-            if (variation < 0)
-                targetY = rowHeight + variation;
+            const variation = ((currentRowY + rowHeight) - (Math.floor(this.canvasContainer.scrollTop) + this.canvasContainer.clientHeight));
+            if (variation > -3)
+                targetY = Math.abs(variation) + 2; // +2 beacuse of cell selection border
             else
                 targetY = rowHeight;
             this.canvasContainer.scrollTop += targetY;
@@ -849,7 +852,7 @@ export class ExcelGrid {
         }
         else if ((col > oldCol) && ((currentColX + (this.columns.get(col)?.width || this.config.columnWidth)) >= (Math.floor(this.canvasContainer.scrollLeft) + this.canvasContainer.clientWidth))) {
             targetX = (this.columns.get(col)?.width || this.config.columnWidth) + (currentColX - (Math.floor(this.canvasContainer.scrollLeft) + this.canvasContainer.clientWidth));
-            this.canvasContainer.scrollLeft += targetX;
+            this.canvasContainer.scrollLeft += targetX+3;
         }
         
         this.render();
