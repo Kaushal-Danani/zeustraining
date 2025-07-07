@@ -47,7 +47,6 @@ export class CanvasPool {
         canvas.height = this.tileSize * dpr;
         canvas.style.width = `${this.tileSize}px`;
         canvas.style.height = `${this.tileSize}px`;
-        
         const ctx = canvas.getContext('2d');
         ctx.scale(dpr, dpr);
         
@@ -177,6 +176,80 @@ export class CanvasPool {
             rowY += rowHeight;
         }
         ctx.stroke();
+
+        // Draw selection backgrounds
+        if (!this.grid.selection.isEditing) {
+            this.grid.selection.selectedRanges.forEach(range => {
+                const minRow = Math.min(range.startRow, range.endRow);
+                const maxRow = Math.max(range.startRow, range.endRow);
+                const minCol = Math.min(range.startCol, range.endCol);
+                const maxCol = Math.max(range.startCol, range.endCol);
+
+                let selLeft = -tileStartX;
+                for (let col = 0; col < minCol; col++) {
+                    selLeft += this.grid.columns.get(col)?.width || config.columnWidth;
+                }
+                let selWidth = 0;
+                for (let col = minCol; col <= maxCol; col++) {
+                    selWidth += this.grid.columns.get(col)?.width || config.columnWidth;
+                }
+
+                let selTop = -tileStartY;
+                for (let row = 0; row < minRow; row++) {
+                    selTop += this.grid.store.rows.get(row)?.height || config.rowHeight;
+                }
+                let selHeight = 0;
+                for (let row = minRow; row <= maxRow; row++) {
+                    selHeight += this.grid.store.rows.get(row)?.height || config.rowHeight;
+                }
+
+                if (selLeft + selWidth > 0 && selLeft < this.tileSize && selTop + selHeight > 0 && selTop < this.tileSize) {
+                    
+                    ctx.strokeStyle = config.colors.selectionBorder;
+                    ctx.lineWidth = 2;
+                    if (minCol % ((config.tileSize/config.columnWidth)-1) == 1) { // First column of new canvas starts
+                        ctx.strokeRect(selLeft + 1, selTop - 1, selWidth-1, selHeight + 1)
+
+                        ctx.fillStyle = config.colors.selectionBorder;
+                        ctx.fillRect(selLeft + selWidth - 2, selTop + selHeight - 2, 4, 4);
+
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(selLeft + selWidth - 2, selTop + selHeight - 2, 4, 4);
+                    }
+                    else if (minCol % ((config.tileSize/config.columnWidth)-1) == 0) { // Last column of canvas
+                        ctx.strokeRect(selLeft - 1, selTop - 1, selWidth-1, selHeight + 1);
+
+                        ctx.fillStyle = config.colors.selectionBorder;
+                        ctx.fillRect(selLeft + selWidth - 4, selTop + selHeight - 2, 4, 4);
+
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(selLeft + selWidth - 4, selTop + selHeight - 2, 4, 4);
+                    }
+                    else { // In between columns of any canvas
+                        ctx.strokeRect(selLeft - 1, selTop - 1, selWidth + 1, selHeight + 1);
+
+                        ctx.fillStyle = config.colors.selectionBorder;
+                        ctx.fillRect(selLeft + selWidth - 2, selTop + selHeight - 2, 4, 4);
+
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(selLeft + selWidth - 2, selTop + selHeight - 2, 4, 4);
+                    } 
+                    
+                    if (!(maxCol == minCol && maxRow == minRow)) {
+                        ctx.fillStyle = config.colors.selectRangeColor;
+                        if (minCol % ((config.tileSize/config.columnWidth)-1) == 1)
+                            ctx.fillRect(selLeft+2, selTop, selWidth-3, selHeight-1);
+                        else if (minCol % ((config.tileSize/config.columnWidth)-1) == 0)
+                            ctx.fillRect(selLeft, selTop, selWidth-3, selHeight-1);
+                        else
+                            ctx.fillRect(selLeft, selTop, selWidth-1, selHeight-1);
+                    }
+                }
+            });
+        }
         
         // Draw cell values
         startRow = 0;

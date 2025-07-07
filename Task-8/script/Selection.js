@@ -19,34 +19,10 @@
         this.endCell = null;
         this.isSelecting = false;
         this.isEditing = false;
-        this.selectionDivs = []; // Changed to array to support multiple selection ranges
         this.selectedRanges = []; // Store multiple selection ranges
 
         // Ensure canvasContainer is focusable for keyboard events
         this.canvasContainer.setAttribute('tabindex', '0');
-    }
-
-    /**
-     * Creates a selection div for a given range
-     * @param {{startRow: number, startCol: number, endRow: number, endCol: number}} range
-     */
-    createSelectionDiv(range) {
-        const selectionDiv = document.createElement('div');
-        selectionDiv.style.position = 'absolute';
-        selectionDiv.style.border = `2px solid ${this.config.colors.selectionBorder}`;
-        selectionDiv.style.pointerEvents = 'none';
-        selectionDiv.style.zIndex = '900';
-        this.canvasContainer.appendChild(selectionDiv);
-        this.selectionDivs.push({ div: selectionDiv, range });
-        this.updateSelectionDivPosition(selectionDiv, range, this.grid.scrollX, this.grid.scrollY);
-    }
-
-    /**
-     * Removes all selection divs
-     */
-    removeSelectionDivs() {
-        this.selectionDivs.forEach(({ div }) => div.remove());
-        this.selectionDivs = [];
     }
 
     /**
@@ -95,8 +71,6 @@
                 this.startCell = { row: range.startRow, col: range.startCol, address: `${this.grid.columnNumberToLetter(range.startCol)}${range.startRow + 1}` };
                 this.endCell = { row: range.endRow, col: range.endCol, address: `${this.grid.columnNumberToLetter(range.endCol)}${range.endRow + 1}` };
                 
-                this.removeSelectionDivs();
-                this.selectedRanges.forEach(range => this.createSelectionDiv(range));
                 this.grid.updateStatusBar();
                 this.grid.render();
             });
@@ -141,8 +115,6 @@
                 this.startCell = { row: range.startRow, col: range.startCol, address: `${this.grid.columnNumberToLetter(range.startCol)}${range.startRow + 1}` };
                 this.endCell = { row: range.endRow, col: range.endCol, address: `${this.grid.columnNumberToLetter(range.endCol)}${range.endRow + 1}` };
                 
-                this.removeSelectionDivs();
-                this.selectedRanges.forEach(range => this.createSelectionDiv(range));
                 this.grid.updateStatusBar();
                 this.grid.render();
             });
@@ -178,8 +150,6 @@
                 this.startCell = cell;
                 this.endCell = cell;
                 this.isSelecting = true;
-                this.removeSelectionDivs();
-                this.selectedRanges.forEach(range => this.createSelectionDiv(range));
                 this.grid.updateStatusBar();
                 this.grid.render();
             }
@@ -208,8 +178,7 @@
                         this.endCell.col,
                         true
                     );
-                    this.removeSelectionDivs();
-                    this.selectedRanges.forEach(range => this.createSelectionDiv(range));
+                    this.grid.canvasPool.renderTiles();
                     this.grid.updateStatusBar();
                     this.grid.render();
                 }
@@ -227,7 +196,7 @@
             const y = e.clientY - this.config.headerHeight;
             
             const cell = this.grid.getCurrentCell(x, y);
-            if (cell) {
+            if (cell) { 
                 this.startCell = cell;
                 this.endCell = cell;
                 this.isEditing = true;
@@ -235,7 +204,7 @@
                 this.selectedRanges = [{ startRow: cell.row, startCol: cell.col, endRow: cell.row, endCol: cell.col }];
                 this.store.setSelectionRange(cell.row, cell.col, cell.row, cell.col, true);
                 this.createInputBox(cell);
-                this.grid.render();
+                // Do not call grid.render() to avoid scrolling
             }
         });
 
@@ -251,6 +220,7 @@
                 this.selectedRanges = [{ startRow: this.startCell.row, startCol: this.startCell.col, endRow: this.startCell.row, endCol: this.startCell.col }];
                 this.store.setSelectionRange(this.startCell.row, this.startCell.col, this.startCell.row, this.startCell.col, true);
                 this.createInputBox(this.startCell, e.key);
+                // Do not call grid.render() to avoid scrolling
                 return;
             }
 
@@ -299,8 +269,6 @@
             this.store.clearSelections();
             this.selectedRanges = [{ startRow: newRow, startCol: newCol, endRow: newRow, endCol: newCol }];
             this.store.setSelectionRange(newRow, newCol, newRow, newCol, true);
-            this.removeSelectionDivs();
-            this.selectedRanges.forEach(range => this.createSelectionDiv(range));
             this.grid.scrollToCell(newRow, this.startCell.row, newCol, this.startCell.col);
             this.startCell = { row: newRow, col: newCol, address: `${this.grid.columnNumberToLetter(newCol)}${newRow + 1}` };
             this.endCell = this.startCell;
@@ -315,8 +283,6 @@
      * @param {string} [initialValue=''] - Initial value for the input box
      */
     createInputBox(cell, initialValue = '') {
-        this.removeSelectionDivs();
-
         const range = this.selectedRanges.find(r => r.startRow === cell.row && r.startCol === cell.col && r.endRow === cell.row && r.endCol === cell.col) || this.selectedRanges[0];
         const minRow = Math.min(range.startRow, range.endRow);
         const maxRow = Math.max(range.startRow, range.endRow);
@@ -341,40 +307,31 @@
             height += this.grid.store.rows.get(row)?.height || this.config.rowHeight;
         }
 
-        const selectionDiv = document.createElement('div');
-        selectionDiv.style.position = 'absolute';
-        selectionDiv.style.border = `2px solid ${this.config.colors.selectionBorder}`;
-        selectionDiv.style.pointerEvents = 'none';
-        selectionDiv.style.left = `${left - 2}px`;
-        selectionDiv.style.top = `${top - 2}px`;
-        selectionDiv.style.width = `${width + 3}px`;
-        selectionDiv.style.height = `${height + 3}px`;
-        selectionDiv.style.zIndex = '900';
-        this.canvasContainer.appendChild(selectionDiv);
-        this.selectionDivs.push({ div: selectionDiv, range });
-
         const inputBox = document.createElement('input');
         inputBox.type = 'text';
         inputBox.style.position = 'absolute';
-        inputBox.style.all = 'unset';
-        inputBox.style.padding = '0px 0px 0px 3px';
+        // inputBox.style.all = 'unset';
+        // inputBox.style.padding = '0px 0px 0px 3px';
         inputBox.style.margin = '0';
-        inputBox.style.width = `calc(100% - 4px)`;
-        inputBox.style.height = `calc(100% - 2px)`;
+        inputBox.style.width = `${width - 6}px`;
+        inputBox.style.height = `${height - 2}px`;
         inputBox.style.background = 'white';
         inputBox.style.font = `16px Arial`;
         inputBox.style.color = this.config.colors.cellText;
+        inputBox.style.outline = 'none';
+        inputBox.style.border = 'none';
         inputBox.style.zIndex = '1000';
+        inputBox.style.left = `${left+3}px`;
+        inputBox.style.top = `${top+1}px`;
         inputBox.value = initialValue || this.store.getCell(cell.row, cell.col).value || '';
         
-        selectionDiv.appendChild(inputBox);
+        this.canvasContainer.appendChild(inputBox);
         inputBox.focus();
 
         const saveValue = () => {
             this.store.setCellValue(cell.row, cell.col, inputBox.value);
             this.isEditing = false;
-            this.removeSelectionDivs();
-            this.selectedRanges.forEach(range => this.createSelectionDiv(range));
+            inputBox.remove();
             this.grid.canvasPool.renderTiles();
             this.grid.render();
         };
@@ -388,125 +345,29 @@
                 this.selectedRanges = [{ startRow: this.startCell.row, startCol: this.startCell.col, endRow: this.startCell.row, endCol: this.startCell.col }];
                 this.endCell = this.startCell;
                 this.store.setSelectionRange(this.startCell.row, this.startCell.col, this.startCell.row, this.startCell.col, true);
-                this.removeSelectionDivs();
-                this.selectedRanges.forEach(range => this.createSelectionDiv(range));
                 this.grid.scrollToCell(this.startCell.row, cell.row, this.startCell.col, cell.col);
                 this.grid.updateStatusBar();
+                this.grid.render();
             } else if (e.key === 'Escape') {
                 this.isEditing = false;
                 this.store.clearSelections();
-                this.removeSelectionDivs();
-                this.selectedRanges.forEach(range => this.createSelectionDiv(range));
-                this.grid.canvasPool.renderTiles();
+                inputBox.value = '';
+                inputBox.remove();
+                // this.grid.canvasPool.renderTiles();
                 this.grid.render();
             } else if (e.key === 'Tab') {
                 saveValue();
                 this.store.clearSelections();
-                this.startCell = { row: cell.row, col: cell.col, address: `${this.grid.columnNumberToLetter(cell.col)}${cell.row + 1}` };
+                const newCol = e.shiftKey ? Math.max(0, cell.col - 1) : Math.min(this.grid.currentColumns - 1, cell.col + 1);
+                this.startCell = { row: cell.row, col: newCol, address: `${this.grid.columnNumberToLetter(newCol)}${cell.row + 1}` };
                 this.endCell = this.startCell;
-                this.selectedRanges = [{ startRow: cell.row, startCol: cell.col, endRow: cell.row, endCol: cell.col }];
-                this.store.setSelectionRange(cell.row, cell.col, cell.row, cell.col, true);
-                this.removeSelectionDivs();
-                this.selectedRanges.forEach(range => this.createSelectionDiv(range));
-                this.grid.scrollToCell(cell.row, cell.row, cell.col, cell.col);
+                this.selectedRanges = [{ startRow: cell.row, startCol: newCol, endRow: cell.row, endCol: newCol }];
+                this.store.setSelectionRange(cell.row, newCol, cell.row, newCol, true);
+                this.grid.scrollToCell(cell.row, cell.row, newCol, cell.col);
                 this.grid.updateStatusBar();
+                this.grid.render();
             }
         });
-    }
-
-    /**
-     * Updates the position and size of a selection div
-     * @param {HTMLElement} selectionDiv - The selection div to update
-     * @param {{startRow: number, startCol: number, endRow: number, endCol: number}} range - The selection range
-     * @param {number} scrollX - Current horizontal scroll position
-     * @param {number} scrollY - Current vertical scroll position
-     */
-    updateSelectionDivPosition(selectionDiv, range, scrollX = 0, scrollY = 0) {
-        if (!range) {
-            this.removeSelectionDivs();
-            return;
-        }
-
-        const minRow = Math.min(range.startRow, range.endRow);
-        const maxRow = Math.max(range.startRow, range.endRow);
-        const minCol = Math.min(range.startCol, range.endCol);
-        const maxCol = Math.max(range.startCol, range.endCol);
-
-        let left = 0;
-        for (let col = 0; col < minCol; col++) {
-            left += this.grid.columns.get(col)?.width || this.config.columnWidth;
-        }
-        let width = 0;
-        for (let col = minCol; col <= maxCol; col++) {
-            width += this.grid.columns.get(col)?.width || this.config.columnWidth;
-        }
-
-        let top = 0;
-        for (let row = 0; row < minRow; row++) {
-            top += this.grid.store.rows.get(row)?.height || this.config.rowHeight;
-        }
-        let height = 0;
-        for (let row = minRow; row <= maxRow; row++) {
-            height += this.grid.store.rows.get(row)?.height || this.config.rowHeight;
-        }
-
-        selectionDiv.style.left = `${left - 2}px`;
-        selectionDiv.style.top = `${top - 2}px`;
-        selectionDiv.style.width = `${width + 3}px`;
-        selectionDiv.style.height = `${height + 3}px`;
-
-        if (!this.isEditing) {
-            const existingRect = selectionDiv.querySelector('div');
-            if (existingRect) {
-                selectionDiv.removeChild(existingRect);
-            }
-
-            const selectRect = document.createElement('div');
-            selectRect.style.position = 'absolute';
-            selectRect.style.left = `${width - 2}px`;
-            selectRect.style.top = `${height - 2}px`;
-            selectRect.style.width = '4px';
-            selectRect.style.height = '4px';
-            selectRect.style.boxShadow = `0 0 0 1px white`;
-            selectRect.style.backgroundColor = this.config.colors.selectionBorder;
-            selectionDiv.appendChild(selectRect);
-        }
-
-        if (maxCol - minCol !== 0 || maxRow - minRow !== 0) {
-            selectionDiv.style.backgroundColor = this.config.colors.selectRangeColor;
-        }
-    }
-
-    /**
-     * Updates all selection divs' positions
-     * @param {number} scrollX - Current horizontal scroll position
-     * @param {number} scrollY - Current vertical scroll position
-     */
-    updateSelectionDivsPosition(scrollX = 0, scrollY = 0) {
-        this.selectionDivs.forEach(({ div, range }) => {
-            this.updateSelectionDivPosition(div, range, scrollX, scrollY);
-        });
-    }
-
-    /**
-     * Updates the position and size of the input box
-     */
-    updateInputBoxPosition() {
-        if (!this.isEditing || !this.selectionDivs.length) return;
-
-        const inputBox = this.selectionDivs[0].div.querySelector('input');
-        if (!inputBox || !this.startCell) return;
-
-        let left = this.config.headerWidth;
-        for (let col = 0; col < this.startCell.col; col++) {
-            left += this.grid.columns.get(col)?.width || this.config.columnWidth;
-        }
-        let top = this.config.headerHeight;
-        for (let row = 0; row < this.startCell.row; row++) {
-            top += this.grid.store.rows.get(row)?.height || this.config.rowHeight;
-        }
-        inputBox.style.left = `${left - this.grid.scrollX - 2}px`;
-        inputBox.style.top = `${top - this.grid.scrollY - 2}px`;
     }
 
     /**
@@ -568,7 +429,6 @@
         this.endCell = null;
         this.isSelecting = false;
         this.isEditing = false;
-        this.removeSelectionDivs();
         this.selectedRanges = [];
         this.store.clearSelections();
     }

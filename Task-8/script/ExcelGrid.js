@@ -142,17 +142,18 @@ export class ExcelGrid {
     setupEventListeners() {
         // Main scroll event handler
         this.canvasContainer.addEventListener('scroll', (e) => {
+            // if (this.selection.isEditing) return; // Skip scrolling updates during editing
             this.scrollX = Math.floor(e.target.scrollLeft);
             this.scrollY = Math.floor(e.target.scrollTop);
             
             this.checkAndAdaptContent();
             this.updateViewport();
             this.render();
-            this.selection.updateSelectionDivsPosition(this.scrollX, this.scrollY);
         });
 
         // Mouse wheel support
         this.canvasContainer.addEventListener('wheel', (e) => {
+            // if (this.selection.isEditing) return; // Prevent wheel scrolling during editing
             const scrollLeft = this.canvasContainer.scrollLeft + e.deltaX;
             const scrollTop = this.canvasContainer.scrollTop + e.deltaY;
             
@@ -166,7 +167,6 @@ export class ExcelGrid {
             this.updateScrollContent();
             this.updateViewport();
             this.render();
-            this.selection.updateSelectionDivsPosition(this.scrollX, this.scrollY);
             this.setupResizeHandles(); // Re-create resize handles on window resize
         });
 
@@ -334,7 +334,6 @@ export class ExcelGrid {
                 this.store.rows.get(rowIndex).setHeight(newHeight);
                 this.drawRowHeaders();
             }
-
         };
 
         const stopResize = (e) => {
@@ -364,7 +363,6 @@ export class ExcelGrid {
 
             this.updateScrollContent();
             this.setupResizeHandles(); // Update positions of other resizers
-            this.selection.updateSelectionDivsPosition();
             this.updateViewport();
         };
 
@@ -584,7 +582,7 @@ export class ExcelGrid {
         
         this.canvasPool.updateVisibleTiles(this.scrollX, this.scrollY, this.viewportWidth, this.viewportHeight);
         this.updateStatusBar();
-        this.selection.updateInputBoxPosition();
+        this.setupResizeHandles();
     }
 
     /**
@@ -816,6 +814,7 @@ export class ExcelGrid {
      * Scrolls the grid to display a specific cell
      */
     scrollToCell(row, oldRow, col, oldCol) {
+        // if (this.selection.isEditing) return; // Skip scrolling during editing
         let targetX, targetY;
         let currentRowY = 0;
         for (let i = 0; i < row; i++) {
@@ -838,7 +837,7 @@ export class ExcelGrid {
             const rowHeight = this.store.rows.get(row)?.height || this.config.rowHeight;
             const variation = ((currentRowY + rowHeight) - (Math.floor(this.canvasContainer.scrollTop) + this.canvasContainer.clientHeight));
             if (variation > -3)
-                targetY = Math.abs(variation) + 2; // +2 beacuse of cell selection border
+                targetY = Math.abs(variation) + 2; // +2 because of cell selection border
             else
                 targetY = rowHeight;
             this.canvasContainer.scrollTop += targetY;
