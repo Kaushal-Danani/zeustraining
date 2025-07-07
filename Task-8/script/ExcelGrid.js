@@ -148,7 +148,7 @@ export class ExcelGrid {
             this.checkAndAdaptContent();
             this.updateViewport();
             this.render();
-            this.selection.updateSelectionDivPosition(this.scrollX, this.scrollY);
+            this.selection.updateSelectionDivsPosition(this.scrollX, this.scrollY);
         });
 
         // Mouse wheel support
@@ -166,7 +166,7 @@ export class ExcelGrid {
             this.updateScrollContent();
             this.updateViewport();
             this.render();
-            this.selection.updateSelectionDivPosition(this.scrollX, this.scrollY);
+            this.selection.updateSelectionDivsPosition(this.scrollX, this.scrollY);
             this.setupResizeHandles(); // Re-create resize handles on window resize
         });
 
@@ -216,7 +216,6 @@ export class ExcelGrid {
                 resizer.style.top = '0px';
                 resizer.style.width = `${this.config.resizerSize}px`;
                 resizer.style.height = `${this.config.headerHeight}px`;
-                // resizer.style.backgroundColor = this.config.resizerColor;
                 resizer.style.cursor = 'ew-resize';
                 resizer.style.zIndex = '10';
                 resizer.dataset.colIndex = col;
@@ -237,7 +236,6 @@ export class ExcelGrid {
                 resizer.style.top = `${rowY + rowHeight - this.config.resizerSize / 2}px`;
                 resizer.style.width = `${this.config.headerWidth}px`;
                 resizer.style.height = `${this.config.resizerSize}px`;
-                // resizer.style.backgroundColor = this.config.resizerColor;
                 resizer.style.cursor = 'ns-resize';
                 resizer.style.zIndex = '10';
                 resizer.dataset.rowIndex = row;
@@ -341,11 +339,6 @@ export class ExcelGrid {
                 this.store.rows.get(rowIndex).setHeight(newHeight);
             }
 
-            this.updateScrollContent();
-            this.updateViewport();
-            this.setupResizeHandles(); // Update positions of other resizers
-            this.selection.updateSelectionDivPosition();
-
             isResizing = false;
             if (dashedLine) {
                 dashedLine.remove();
@@ -353,6 +346,11 @@ export class ExcelGrid {
             }
             document.removeEventListener('mousemove', resize);
             document.removeEventListener('mouseup', stopResize);
+
+            this.updateScrollContent();
+            this.setupResizeHandles(); // Update positions of other resizers
+            this.selection.updateSelectionDivsPosition();
+            this.updateViewport();
         };
 
         const horizontalHeader = document.querySelector('#horizontal-header');
@@ -537,7 +535,7 @@ export class ExcelGrid {
         let scrollColX = 0;
         let scrollCol = 0;
         while (scrollColX < container.scrollLeft && scrollCol < this.currentColumns) {
-            scrollColX += this.columns.get(scrollCol)?.width || this.config.columnWidth;
+            scrollColX = this.columns.get(scrollCol)?.width || this.config.columnWidth;
             scrollCol++;
         }
         
@@ -572,7 +570,6 @@ export class ExcelGrid {
         this.canvasPool.updateVisibleTiles(this.scrollX, this.scrollY, this.viewportWidth, this.viewportHeight);
         this.updateStatusBar();
         this.selection.updateInputBoxPosition();
-        // this.setupResizeHandles();
     }
 
     /**
@@ -732,7 +729,7 @@ export class ExcelGrid {
             rowY += rowHeight;
         }
 
-        // Draw green bottom border for selected rows
+        // Draw green right border for selected rows
         if (selectedRows.size > 0) {
             ctx.strokeStyle = config.colors.headerHighlightBorder;
             ctx.lineWidth = 4;
@@ -882,8 +879,8 @@ export class ExcelGrid {
         }
         row = Math.max(0, row - 1);
         
-        if (row >= this.currentRows || col >= this.currentColumns) return null;
-        // console.log(row, col, `${this.columnNumberToLetter(col)}${row + 1}`);
+        if (row >= this.currentRows || col >= this.currentColumns) 
+            return null;
         return { row, col, address: `${this.columnNumberToLetter(col)}${row + 1}` };
     }
 

@@ -179,9 +179,11 @@ export class CanvasPool {
         ctx.stroke();
         
         // Draw cell values
+        startRow = 0;
+        startCol = 0;
         ctx.fillStyle = config.colors.cellText;
         ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
+        ctx.textBaseline = 'bottom';
         rowY = -tileStartY;
         for (let row = startRow; row < endRow; row++) {
             const rowHeight = this.grid.store.rows.get(row)?.height || config.rowHeight;
@@ -189,17 +191,24 @@ export class CanvasPool {
             for (let col = startCol; col < endCol; col++) {
                 const colWidth = this.grid.columns.get(col)?.width || config.columnWidth;
                 const cell = this.grid.store.getCell(row, col);
-                if (cell.value) {
+                if (cell.value && colWidth > 15) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(colX, rowY, colWidth-3, rowHeight);
+                    ctx.clip();
+
                     let canvasX, canvasY;
                     if (isNaN(cell.value)) {
                         canvasX = colX + 2;
-                        canvasY = rowY + rowHeight / 2;
-                    }
-                    else {
-                        canvasX = colX + colWidth - ctx.measureText(cell.value).width - 2;
-                        canvasY = rowY + rowHeight / 2;
+                        canvasY = rowY + rowHeight - 3;
+                    } else {
+                        canvasX = colX + colWidth - ctx.measureText(cell.value).width - 3;
+                        canvasY = rowY + rowHeight - 3;
                     }
                     ctx.fillText(cell.value, canvasX, canvasY);
+
+                    // Restore context to remove clipping
+                    ctx.restore();
                 }
                 colX += colWidth;
             }
