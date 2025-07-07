@@ -221,6 +221,13 @@ export class ExcelGrid {
                 resizer.dataset.colIndex = col;
                 horizontalHeader.appendChild(resizer);
                 colX += colWidth;
+
+                if (colWidth == 2) {
+                    const currentCollapseDiv = document.querySelector(`div[data-col-index="${col-1}"]`);
+                    currentCollapseDiv.style.backgroundColor = 'white';
+                    currentCollapseDiv.style.borderLeft = `1px solid ${this.config.colors.headerBorder}`;
+                    currentCollapseDiv.style.borderRight = `1px solid ${this.config.colors.headerBorder}`;
+                }
             }
         }
 
@@ -241,6 +248,13 @@ export class ExcelGrid {
                 resizer.dataset.rowIndex = row;
                 verticalHeader.appendChild(resizer);
                 rowY += rowHeight;
+
+                if (rowHeight == 2) {
+                    const currentCollapseDiv = document.querySelector(`div[data-row-index="${row-1}"]`);
+                    currentCollapseDiv.style.backgroundColor = 'white';
+                    currentCollapseDiv.style.borderTop = `1px solid ${this.config.colors.headerBorder}`;
+                    currentCollapseDiv.style.borderBottom = `1px solid ${this.config.colors.headerBorder}`;
+                }
             }
         }
 
@@ -302,7 +316,7 @@ export class ExcelGrid {
             if (currentResizer.classList.contains('column-resizer')) {
                 const deltaX = e.clientX - startX;
                 const colIndex = parseInt(currentResizer.dataset.colIndex);
-                const newWidth = Math.max(0.5, (startWidth + deltaX));
+                const newWidth = Math.max(2, (startWidth + deltaX));
                 currentResizer.style.left = `${(startX + deltaX)}px`;
                 if (dashedLine && (e.clientX > (startX - startWidth))) {
                     dashedLine.style.left = `${(startX + deltaX)}px`; // Sync with new width
@@ -312,7 +326,7 @@ export class ExcelGrid {
             } else {
                 const deltaY = e.clientY - startY;
                 const rowIndex = parseInt(currentResizer.dataset.rowIndex);
-                const newHeight = Math.max(0.5, startHeight + deltaY);
+                const newHeight = Math.max(2, startHeight + deltaY);
                 currentResizer.style.top = `${startY + deltaY}px`;
                 if (dashedLine && (e.clientY > (startY - startHeight))) {
                     dashedLine.style.top = `${startY + deltaY}px`; // Sync with new height
@@ -327,15 +341,16 @@ export class ExcelGrid {
             if (e.button === 1 || e.button === 2)
                 return;
                 
+            let newWidth, newHeight;
             if (currentResizer.classList.contains('column-resizer')) {
                 const colIndex = parseInt(currentResizer.dataset.colIndex);
                 const deltaX = e.clientX - startX;
-                const newWidth = Math.max(0.5, (startWidth + deltaX));
+                newWidth = Math.max(2, (startWidth + deltaX));
                 this.columns.get(colIndex).setWidth(newWidth);
             } else {
                 const rowIndex = parseInt(currentResizer.dataset.rowIndex);
                 const deltaY = e.clientY - startY;
-                const newHeight = Math.max(0.5, startHeight + deltaY);
+                newHeight = Math.max(2, startHeight + deltaY);
                 this.store.rows.get(rowIndex).setHeight(newHeight);
             }
 

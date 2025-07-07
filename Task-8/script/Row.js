@@ -31,7 +31,7 @@ export class Row {
      * @param {number} height - New height in pixels
      */
     setHeight(height) {
-        this.height = Math.max(0.5, height); // Ensure height is at least 1 pixel
+        this.height = Math.max(2, height); // Ensure height is at least 1 pixel
     }
 
     /**
