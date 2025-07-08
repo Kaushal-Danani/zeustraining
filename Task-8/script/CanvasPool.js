@@ -23,12 +23,12 @@ export class CanvasPool {
 
     getVisibleTiles(viewportX, viewportY, viewportWidth, viewportHeight) {
         const buffer = this.tileSize * 0.2;
-        
+
         const startTileX = Math.floor(Math.max(0, viewportX - buffer) / this.tileSize);
         const endTileX = Math.floor((viewportX + viewportWidth + buffer) / this.tileSize);
         const startTileY = Math.floor(Math.max(0, viewportY - buffer) / this.tileSize);
         const endTileY = Math.floor((viewportY + viewportHeight + buffer) / this.tileSize);
-        
+
         const tiles = [];
         for (let x = startTileX; x <= endTileX; x++) {
             for (let y = startTileY; y <= endTileY; y++) {
@@ -41,7 +41,7 @@ export class CanvasPool {
     createNewCanvas() {
         const canvas = document.createElement('canvas');
         canvas.className = 'grid-tile';
-        
+
         const dpr = window.devicePixelRatio || 1;
         canvas.width = this.tileSize * dpr;
         canvas.height = this.tileSize * dpr;
@@ -49,7 +49,7 @@ export class CanvasPool {
         canvas.style.height = `${this.tileSize}px`;
         const ctx = canvas.getContext('2d');
         ctx.scale(dpr, dpr);
-        
+
         this.container.appendChild(canvas);
         return canvas;
     }
@@ -57,7 +57,7 @@ export class CanvasPool {
     positionCanvas(canvas, tileX, tileY) {
         const pixelX = tileX * this.tileSize;
         const pixelY = tileY * this.tileSize;
-        
+
         canvas.style.left = `${pixelX}px`;
         canvas.style.top = `${pixelY}px`;
         canvas.style.display = 'block';
@@ -65,7 +65,7 @@ export class CanvasPool {
 
     createTile(tileX, tileY) {
         const tileKey = this.getTileKey(tileX, tileY);
-        
+
         if (this.activeTiles.has(tileKey)) {
             const canvas = this.activeTiles.get(tileKey);
             const dpr = window.devicePixelRatio || 1;
@@ -73,7 +73,7 @@ export class CanvasPool {
             canvas.height = this.tileSize * dpr;
             canvas.style.width = `${this.tileSize}px`;
             canvas.style.height = `${this.tileSize}px`;
-            
+
             const ctx = canvas.getContext('2d');
             ctx.scale(dpr, dpr);
 
@@ -81,18 +81,18 @@ export class CanvasPool {
             this.renderTile(canvas, tileX, tileY);
             return canvas;
         }
-        
+
         let canvas;
         if (this.canvasPool.length > 0) {
             canvas = this.canvasPool.pop();
         } else {
             canvas = this.createNewCanvas();
         }
-        
+
         this.positionCanvas(canvas, tileX, tileY);
         this.renderTile(canvas, tileX, tileY);
         this.activeTiles.set(tileKey, canvas);
-        
+
         return canvas;
     }
 
@@ -108,12 +108,12 @@ export class CanvasPool {
     renderTile(canvas, tileX, tileY) {
         const ctx = canvas.getContext('2d');
         const config = this.grid.config;
-        
+
         ctx.clearRect(0, 0, this.tileSize, this.tileSize);
-        
+
         const tileStartX = tileX * this.tileSize;
         const tileStartY = tileY * this.tileSize;
-        
+
         // Calculate column and row ranges based on variable widths and heights
         let startCol = 0;
         let endCol = 0;
@@ -143,11 +143,11 @@ export class CanvasPool {
 
         ctx.font = '16px Arial';
         ctx.lineWidth = 1 / window.devicePixelRatio;
-        
+
         // Draw cells background
         ctx.fillStyle = config.colors.cellBg;
         ctx.fillRect(0, 0, this.tileSize, this.tileSize);
-        
+
         // Draw vertical grid lines
         ctx.strokeStyle = config.colors.gridLine;
         ctx.beginPath();
@@ -162,7 +162,7 @@ export class CanvasPool {
             colX += colWidth;
         }
         ctx.stroke();
-        
+
         // Draw horizontal grid lines
         ctx.beginPath();
         rowY = -tileStartY;
@@ -203,54 +203,77 @@ export class CanvasPool {
                     selHeight += this.grid.store.rows.get(row)?.height || config.rowHeight;
                 }
 
-                if (selLeft + selWidth > 0 && selLeft < this.tileSize && selTop + selHeight > 0 && selTop < this.tileSize) {
-                    
-                    ctx.strokeStyle = config.colors.selectionBorder;
-                    ctx.lineWidth = 2;
-                    if (minCol % ((config.tileSize/config.columnWidth)-1) == 1) { // First column of new canvas starts
-                        ctx.strokeRect(selLeft + 1, selTop - 1, selWidth-1, selHeight + 1)
+                // Define styles based on selection type
+                let borderStyle, fillStyle, handleFillStyle;
+                switch (range.type) {
+                    case 'row':
+                        borderStyle = config.colors.selectionBorder; // Green
+                        fillStyle = config.colors.selectRangeColor; // Light green fill
+                        handleFillStyle = config.colors.selectionBorder;
+                        break;
+                    case 'column':
+                        borderStyle = config.colors.selectionBorder; // Blue
+                        fillStyle = config.colors.selectRangeColor; // Light blue fill
+                        handleFillStyle = config.colors.selectionBorder;
+                        break;
+                    case 'cell':
+                        borderStyle = config.colors.selectionBorder; // Red
+                        // fillStyle = 'rgba(255, 200, 200, 0.6)'; // Light red fill
+                        handleFillStyle = config.colors.selectionBorder;
+                        break;
+                    case 'cell-range':
+                        borderStyle = config.colors.selectionBorder; // Green (default)
+                        fillStyle = config.colors.selectRangeColor; // Default range color
+                        handleFillStyle = config.colors.selectionBorder;
+                        break;
+                    default:
+                        borderStyle = config.colors.selectionBorder;
+                        fillStyle = config.colors.selectRangeColor;
+                        handleFillStyle = config.colors.selectionBorder;
+                }
 
-                        ctx.fillStyle = config.colors.selectionBorder;
+                ctx.strokeStyle = borderStyle;
+                ctx.lineWidth = 2;
+                if (((this.grid.selection.getSelectedRows().size == 1 || this.grid.selection.getSelectedColumns().size == 1) && (range.type == 'column' || range.type == 'row' || range.type == 'cell')) || range.type == 'cell-range')
+                {
+                    if (minCol % ((config.tileSize / config.columnWidth) - 1) == 1) {
+                        ctx.strokeRect(selLeft + 1, selTop - 1, selWidth - 1, selHeight + 1);
+                        ctx.fillStyle = handleFillStyle;
                         ctx.fillRect(selLeft + selWidth - 2, selTop + selHeight - 2, 4, 4);
-
                         ctx.strokeStyle = 'white';
                         ctx.lineWidth = 1;
                         ctx.strokeRect(selLeft + selWidth - 2, selTop + selHeight - 2, 4, 4);
                     }
-                    else if (minCol % ((config.tileSize/config.columnWidth)-1) == 0) { // Last column of canvas
-                        ctx.strokeRect(selLeft - 1, selTop - 1, selWidth-1, selHeight + 1);
-
-                        ctx.fillStyle = config.colors.selectionBorder;
+                    else if (minCol % ((config.tileSize / config.columnWidth) - 1) == 0) {
+                        ctx.strokeRect(selLeft - 1, selTop - 1, selWidth - 1, selHeight + 1);
+                        ctx.fillStyle = handleFillStyle;
                         ctx.fillRect(selLeft + selWidth - 4, selTop + selHeight - 2, 4, 4);
-
                         ctx.strokeStyle = 'white';
                         ctx.lineWidth = 1;
                         ctx.strokeRect(selLeft + selWidth - 4, selTop + selHeight - 2, 4, 4);
                     }
-                    else { // In between columns of any canvas
+                    else {
                         ctx.strokeRect(selLeft - 1, selTop - 1, selWidth + 1, selHeight + 1);
-
-                        ctx.fillStyle = config.colors.selectionBorder;
+                        ctx.fillStyle = handleFillStyle;
                         ctx.fillRect(selLeft + selWidth - 2, selTop + selHeight - 2, 4, 4);
-
                         ctx.strokeStyle = 'white';
                         ctx.lineWidth = 1;
                         ctx.strokeRect(selLeft + selWidth - 2, selTop + selHeight - 2, 4, 4);
-                    } 
-                    
-                    if (!(maxCol == minCol && maxRow == minRow)) {
-                        ctx.fillStyle = config.colors.selectRangeColor;
-                        if (minCol % ((config.tileSize/config.columnWidth)-1) == 1)
-                            ctx.fillRect(selLeft+2, selTop, selWidth-3, selHeight-1);
-                        else if (minCol % ((config.tileSize/config.columnWidth)-1) == 0)
-                            ctx.fillRect(selLeft, selTop, selWidth-3, selHeight-1);
-                        else
-                            ctx.fillRect(selLeft, selTop, selWidth-1, selHeight-1);
                     }
+                }
+
+                if (!(maxCol == minCol && maxRow == minRow)) {
+                    ctx.fillStyle = fillStyle;
+                    if (minCol % ((config.tileSize / config.columnWidth) - 1) == 1)
+                        ctx.fillRect(selLeft + 2, selTop, selWidth - 3, selHeight - 1);
+                    else if (minCol % ((config.tileSize / config.columnWidth) - 1) == 0)
+                        ctx.fillRect(selLeft, selTop, selWidth - 3, selHeight - 1);
+                    else
+                        ctx.fillRect(selLeft, selTop, selWidth - 1, selHeight - 1);
                 }
             });
         }
-        
+
         // Draw cell values
         startRow = 0;
         startCol = 0;
@@ -267,7 +290,7 @@ export class CanvasPool {
                 if (cell.value && colWidth > 15) {
                     ctx.save();
                     ctx.beginPath();
-                    ctx.rect(colX, rowY, colWidth-3, rowHeight);
+                    ctx.rect(colX, rowY, colWidth - 3, rowHeight);
                     ctx.clip();
 
                     let canvasX, canvasY;
@@ -302,13 +325,13 @@ export class CanvasPool {
     updateVisibleTiles(scrollX, scrollY, viewportWidth, viewportHeight) {
         const visibleTiles = this.getVisibleTiles(scrollX, scrollY, viewportWidth, viewportHeight);
         const newActiveTiles = new Set();
-        
-        visibleTiles.forEach(({tileX, tileY}) => {
+
+        visibleTiles.forEach(({ tileX, tileY }) => {
             const tileKey = this.getTileKey(tileX, tileY);
             newActiveTiles.add(tileKey);
             this.createTile(tileX, tileY);
         });
-        
+
         this.activeTiles.forEach((canvas, tileKey) => {
             if (!newActiveTiles.has(tileKey)) {
                 this.removeTile(tileKey);

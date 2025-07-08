@@ -1037,6 +1037,15 @@ select#sort-by {
 @media (max-width: 430px) {
   .nav-container {
     gap: 12px;
+    padding: 0%;
+  }
+  .notification-containner {
+    top: 58px;
+    left: 0;
+  }
+  .announcements-containner {
+    top: 58px;
+    right: 0px;
   }
 }
 /*# sourceMappingURL=dashboard.css.map */

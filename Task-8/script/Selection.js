@@ -28,7 +28,7 @@
     /**
      * Sets up event listeners for selection
      */
-    setupEventListeners() {
+     setupEventListeners() {
         const horizontalHeader = document.querySelector('#horizontal-header');
         const verticalHeader = document.querySelector('#vertical-header');
 
@@ -37,7 +37,7 @@
             horizontalHeader.addEventListener('click', (e) => {
                 if (this.isEditing) return;
                 const colResizer = e.target.closest('.column-resizer');
-                if (colResizer) return; // Ignore clicks on resizers
+                if (colResizer) return;
 
                 const x = e.clientX - this.config.headerWidth + this.grid.scrollX;
                 let colX = 0;
@@ -54,15 +54,14 @@
                     startRow: 0,
                     startCol: col,
                     endRow: this.grid.currentRows - 1,
-                    endCol: col
+                    endCol: col,
+                    type: 'column' // Add type
                 };
 
                 if (e.ctrlKey || e.metaKey) {
-                    // Add to existing selections
                     this.selectedRanges = this.selectedRanges.filter(r => r.startCol !== col || r.endCol !== col);
                     this.selectedRanges.push(range);
                 } else {
-                    // New single selection
                     this.store.clearSelections();
                     this.selectedRanges = [range];
                 }
@@ -81,7 +80,7 @@
             verticalHeader.addEventListener('click', (e) => {
                 if (this.isEditing) return;
                 const rowResizer = e.target.closest('.row-resizer');
-                if (rowResizer) return; // Ignore clicks on resizers
+                if (rowResizer) return;
 
                 const y = e.clientY - this.config.headerHeight + this.grid.scrollY;
                 let rowY = 0;
@@ -98,15 +97,14 @@
                     startRow: row,
                     startCol: 0,
                     endRow: row,
-                    endCol: this.grid.currentColumns - 1
+                    endCol: this.grid.currentColumns - 1,
+                    type: 'row'
                 };
 
                 if (e.ctrlKey || e.metaKey) {
-                    // Add to existing selections
                     this.selectedRanges = this.selectedRanges.filter(r => r.startRow !== row || r.endRow !== row);
                     this.selectedRanges.push(range);
                 } else {
-                    // New single selection
                     this.store.clearSelections();
                     this.selectedRanges = [range];
                 }
@@ -121,8 +119,7 @@
         }
 
         this.canvasContainer.addEventListener('mousedown', (e) => {
-            if (e.button !== 0 || this.isEditing) // Only handle left-click
-                return; 
+            if (e.button !== 0) return;
 
             const x = e.clientX - this.config.headerWidth;
             const y = e.clientY - this.config.headerHeight;
@@ -133,15 +130,14 @@
                     startRow: cell.row,
                     startCol: cell.col,
                     endRow: cell.row,
-                    endCol: cell.col
+                    endCol: cell.col,
+                    type: 'cell' // Add type for single cell
                 };
 
                 if (e.ctrlKey || e.metaKey) {
-                    // Add to existing selections
                     this.selectedRanges = this.selectedRanges.filter(r => r.startRow !== cell.row || r.startCol !== cell.col || r.endRow !== cell.row || r.endCol !== cell.col);
                     this.selectedRanges.push(range);
                 } else {
-                    // New single selection
                     this.store.clearSelections();
                     this.selectedRanges = [range];
                 }
@@ -168,7 +164,8 @@
                         startRow: this.startCell.row,
                         startCol: this.startCell.col,
                         endRow: cell.row,
-                        endCol: cell.col
+                        endCol: cell.col,
+                        type: (this.startCell.row === cell.row && this.startCell.col === cell.col) ? 'cell' : 'cell-range'
                     };
                     this.selectedRanges = [range];
                     this.store.setSelectionRange(

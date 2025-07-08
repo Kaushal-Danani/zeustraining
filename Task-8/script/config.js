@@ -48,7 +48,9 @@
         selectionFill: '#137E41',
         headerHighlight: '#CAEBD8',
         headerHighlightBorder: '#137E41',
+        hederSelectFill: '#107C41',
         selectRangeColor: `rgba(232, 242, 236, 0.6)`
+        
     },
     font: '12px Arial'
 };
