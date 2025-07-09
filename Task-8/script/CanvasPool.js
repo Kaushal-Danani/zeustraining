@@ -212,13 +212,13 @@ export class CanvasPool {
                         handleFillStyle = config.colors.selectionBorder;
                         break;
                     case 'column':
-                        borderStyle = config.colors.selectionBorder; // Blue
-                        fillStyle = config.colors.selectRangeColor; // Light blue fill
+                        borderStyle = config.colors.selectionBorder;
+                        fillStyle = config.colors.selectRangeColor;
                         handleFillStyle = config.colors.selectionBorder;
                         break;
                     case 'cell':
-                        borderStyle = config.colors.selectionBorder; // Red
-                        // fillStyle = 'rgba(255, 200, 200, 0.6)'; // Light red fill
+                        borderStyle = config.colors.selectionBorder;
+                        // fillStyle = 'rgba(255, 200, 200, 0.6)';
                         handleFillStyle = config.colors.selectionBorder;
                         break;
                     case 'cell-range':
@@ -234,31 +234,31 @@ export class CanvasPool {
 
                 ctx.strokeStyle = borderStyle;
                 ctx.lineWidth = 2;
-                if (((this.grid.selection.getSelectedRows().size == 1 || this.grid.selection.getSelectedColumns().size == 1) && (range.type == 'column' || range.type == 'row' || range.type == 'cell')) || range.type == 'cell-range')
+                if ( ((this.grid.selection.getSelectedRows().size == 1 || this.grid.selection.getSelectedColumns().size == 1) && (range.type == 'column' || range.type == 'row')) || range.type == 'cell-range' || range.type == 'cell')
                 {
                     if (minCol % ((config.tileSize / config.columnWidth) - 1) == 1) {
                         ctx.strokeRect(selLeft + 1, selTop - 1, selWidth - 1, selHeight + 1);
                         ctx.fillStyle = handleFillStyle;
-                        ctx.fillRect(selLeft + selWidth - 2, selTop + selHeight - 2, 4, 4);
+                        ctx.fillRect(selLeft + selWidth - 3, selTop + selHeight - 3, 6, 6);
                         ctx.strokeStyle = 'white';
                         ctx.lineWidth = 1;
-                        ctx.strokeRect(selLeft + selWidth - 2, selTop + selHeight - 2, 4, 4);
+                        ctx.strokeRect(selLeft + selWidth - 3, selTop + selHeight - 3, 6, 6);
                     }
                     else if (minCol % ((config.tileSize / config.columnWidth) - 1) == 0) {
                         ctx.strokeRect(selLeft - 1, selTop - 1, selWidth - 1, selHeight + 1);
                         ctx.fillStyle = handleFillStyle;
-                        ctx.fillRect(selLeft + selWidth - 4, selTop + selHeight - 2, 4, 4);
+                        ctx.fillRect(selLeft + selWidth - 6, selTop + selHeight - 3, 6, 6);
                         ctx.strokeStyle = 'white';
                         ctx.lineWidth = 1;
-                        ctx.strokeRect(selLeft + selWidth - 4, selTop + selHeight - 2, 4, 4);
+                        ctx.strokeRect(selLeft + selWidth - 6, selTop + selHeight - 3, 6, 6);
                     }
                     else {
                         ctx.strokeRect(selLeft - 1, selTop - 1, selWidth + 1, selHeight + 1);
                         ctx.fillStyle = handleFillStyle;
-                        ctx.fillRect(selLeft + selWidth - 2, selTop + selHeight - 2, 4, 4);
+                        ctx.fillRect(selLeft + selWidth - 3, selTop + selHeight - 3, 6, 6);
                         ctx.strokeStyle = 'white';
                         ctx.lineWidth = 1;
-                        ctx.strokeRect(selLeft + selWidth - 2, selTop + selHeight - 2, 4, 4);
+                        ctx.strokeRect(selLeft + selWidth - 3, selTop + selHeight - 3, 6, 6);
                     }
                 }
 

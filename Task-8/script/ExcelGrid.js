@@ -629,7 +629,7 @@ export class ExcelGrid {
                 if (range && (range.type === 'cell' || range.type === 'cell-range')) {
                     fillStyle = config.colors.headerHighlight;
                 } else if (range && range.type === 'column') {
-                    fillStyle = config.colors.hederSelectFill; // Light green for all columns in selected column
+                    fillStyle = config.colors.headerSelectFill; // Light green for all columns in selected column
                 }
 
                 if (range && range.endCol > col && range.type !== 'cell-range')
@@ -638,8 +638,12 @@ export class ExcelGrid {
                     ctx.fillStyle = config.colors.headerHighlight;
                 else
                     ctx.fillStyle = fillStyle;
+
+                const currentColumnRange = this.selection.selectedRanges.find(r => r.startCol == col  && r.endCol == col && r.startRow == 0 && r.endRow >= config.initialRows-1);
+                if (currentColumnRange && selectedCols.has(col)) {
+                    ctx.fillStyle = config.colors.headerSelectFill;
+                }
                 ctx.fillRect(colX, 0, colWidth, config.headerHeight);
-                
             }
             colX += colWidth;
         }
@@ -675,7 +679,12 @@ export class ExcelGrid {
                             break;
                     }
                 }
-                
+
+                const currentColumnRange = this.selection.selectedRanges.find(r => r.startCol == col && r.endCol == col && r.startRow == 0 && r.endRow >= config.initialRows-1);
+                if (currentColumnRange && selectedCols.has(col)) {
+                    fillStyle = 'white';
+                    font = 'bold 12px Arial';
+                }
                 ctx.font = font;
                 ctx.fillStyle = fillStyle;
                 ctx.fillText(letter, colX + colWidth / 2, config.headerHeight / 2);
@@ -740,7 +749,7 @@ export class ExcelGrid {
                 if (range && (range.type === 'cell' || range.type === 'cell-range')) {
                     fillStyle = config.colors.headerHighlight;
                 } else if (range && range.type === 'row') {
-                    fillStyle = config.colors.hederSelectFill; // Light green for all rows in selected row
+                    fillStyle = config.colors.headerSelectFill; // Light green for all rows in selected row
                 }
                 
                 if (range && range.endRow > row && range.type !== 'cell-range')
@@ -750,8 +759,11 @@ export class ExcelGrid {
                 else
                     ctx.fillStyle = fillStyle;
                 
-                // if (row == 3)
-                //     console.log(fillStyle);
+                const currentRowRange = this.selection.selectedRanges.find(r => r.startRow == row && r.endRow == row && r.startCol == 0 && r.endCol >= config.initialColumns-1);
+                if (currentRowRange && selectedRows.has(row)) {
+                    ctx.fillStyle = config.colors.headerSelectFill;
+                }
+
                 ctx.fillRect(0, rowY, config.headerWidth, rowHeight);
             }
             rowY += rowHeight;
@@ -787,6 +799,11 @@ export class ExcelGrid {
                     }
                 }
                 
+                const currentRowRange = this.selection.selectedRanges.find(r => r.startRow == row && r.endRow == row && r.startCol == 0 && r.endCol >= config.initialColumns-1);
+                if (currentRowRange && selectedRows.has(row)) {
+                    fillStyle = 'white';
+                    font = 'bold 12px Arial';
+                }
                 ctx.font = font;
                 ctx.fillStyle = fillStyle;
                 ctx.fillText(String(row+1), config.headerWidth - ctx.measureText(row+1).width - 5, rowY + rowHeight / 2);

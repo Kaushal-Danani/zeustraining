@@ -225,7 +225,7 @@
             
             let newRow = this.startCell.row;
             let newCol = this.startCell.col;
-            
+
             switch (e.key) {
                 case 'Tab':
                     e.preventDefault();
@@ -264,7 +264,7 @@
                 return;
             
             this.store.clearSelections();
-            this.selectedRanges = [{ startRow: newRow, startCol: newCol, endRow: newRow, endCol: newCol }];
+            this.selectedRanges = [{ startRow: newRow, startCol: newCol, endRow: newRow, endCol: newCol, type: 'cell'}];
             this.store.setSelectionRange(newRow, newCol, newRow, newCol, true);
             this.grid.scrollToCell(newRow, this.startCell.row, newCol, this.startCell.col);
             this.startCell = { row: newRow, col: newCol, address: `${this.grid.columnNumberToLetter(newCol)}${newRow + 1}` };
@@ -329,7 +329,6 @@
             this.store.setCellValue(cell.row, cell.col, inputBox.value);
             this.isEditing = false;
             inputBox.remove();
-            this.grid.canvasPool.renderTiles();
             this.grid.render();
         };
 
@@ -340,9 +339,9 @@
                 saveValue();
                 this.store.clearSelections();
                 this.selectedRanges = [{ startRow: this.startCell.row, startCol: this.startCell.col, endRow: this.startCell.row, endCol: this.startCell.col }];
-                this.endCell = this.startCell;
-                this.store.setSelectionRange(this.startCell.row, this.startCell.col, this.startCell.row, this.startCell.col, true);
+                this.store.setSelectionRange(this.startCell.row+1, this.startCell.col, this.startCell.row+1, this.startCell.col, true);
                 this.grid.scrollToCell(this.startCell.row, cell.row, this.startCell.col, cell.col);
+                this.endCell = this.startCell;
                 this.grid.updateStatusBar();
                 this.grid.render();
             } else if (e.key === 'Escape') {
