@@ -147,7 +147,9 @@ export class ExcelGrid {
             
             this.checkAndAdaptContent();
             this.updateViewport();
-            this.render();
+            this.canvasPool.renderTiles(); // Full redraw for scrolling
+            this.drawColumnHeaders();
+            this.drawRowHeaders();
         });
 
         // Mouse wheel support
@@ -164,8 +166,9 @@ export class ExcelGrid {
             this.initializeCanvas();
             this.updateScrollContent();
             this.updateViewport();
-            this.render();
-            this.setupResizeHandles();
+            this.canvasPool.renderTiles(); // Full redraw for window resize
+            this.drawColumnHeaders();
+            this.drawRowHeaders();
         });
 
         // Delegate selection-related event listeners to the Selection class
@@ -361,7 +364,9 @@ export class ExcelGrid {
 
             this.updateScrollContent();
             this.setupResizeHandles();
-            this.updateViewport();
+            this.canvasPool.renderGridLines(); // Optimized: Redraw only grid lines and necessary content
+            this.drawColumnHeaders();
+            this.drawRowHeaders();
         };
 
         const horizontalHeader = document.querySelector('#horizontal-header');
@@ -459,6 +464,8 @@ export class ExcelGrid {
         this.currentRows = newRowCount;
         this.updateScrollContent();
         this.updateViewport();
+        this.canvasPool.renderTiles(); // Full redraw for new rows
+        this.drawRowHeaders();
         
         this.isLoadingRows = false;
         
@@ -486,6 +493,8 @@ export class ExcelGrid {
         }
         this.updateScrollContent();
         this.updateViewport();
+        this.canvasPool.renderTiles(); // Full redraw for new columns
+        this.drawColumnHeaders();
         
         this.isLoadingColumns = false;
         
@@ -525,6 +534,8 @@ export class ExcelGrid {
             const newScrollTop = currentScrollRatio * container.scrollHeight;
             container.scrollTop = Math.max(0, newScrollTop);
             this.updateViewport();
+            this.canvasPool.renderTiles(); // Full redraw for row contraction
+            this.drawRowHeaders();
             console.log(`Contracted rows. Current total: ${this.currentRows}`);
         }
     }
@@ -566,6 +577,8 @@ export class ExcelGrid {
             const newScrollLeft = currentScrollRatio * container.scrollWidth;
             container.scrollLeft = Math.max(0, newScrollLeft);
             this.updateViewport();
+            this.canvasPool.renderTiles(); // Full redraw for column contraction
+            this.drawColumnHeaders();
             console.log(`Contracted columns. Current total: ${this.currentColumns}`);
         }
     }
@@ -935,10 +948,10 @@ export class ExcelGrid {
         }
         else if ((col > oldCol) && ((currentColX + (this.columns.get(col)?.width || this.config.columnWidth)) >= (Math.floor(this.canvasContainer.scrollLeft) + this.canvasContainer.clientWidth))) {
             targetX = (this.columns.get(col)?.width || this.config.columnWidth) + (currentColX - (Math.floor(this.canvasContainer.scrollLeft) + this.canvasContainer.clientWidth));
-            this.canvasContainer.scrollLeft += targetX+3;
+            this.canvasContainer.scrollLeft += targetX + 3;
         }
         
-        this.render();
+        // Scroll event will trigger renderTiles, drawColumnHeaders, and drawRowHeaders
     }
 
     /**

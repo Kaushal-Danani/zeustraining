@@ -1,4 +1,5 @@
 import { ExcelGrid } from "./ExcelGrid.js";
+import { TileRenderer } from "./TileRenderer.js";
 
 /**
  * Manages a pool of canvas elements for dynamic rendering
@@ -15,6 +16,8 @@ export class CanvasPool {
         this.canvasPool = [];
         this.tileSize = options.tileSize || 800;
         this.container = grid.canvasContainer;
+        this.tileRenderer = new TileRenderer(grid, this.tileSize);
+        this.previousSelections = new Set(); // Cache previous selection ranges
     }
 
     getTileKey(tileX, tileY) {
@@ -106,33 +109,22 @@ export class CanvasPool {
     }
 
     renderTile(canvas, tileX, tileY) {
-        const ctx = canvas.getContext('2d');
-        const config = this.grid.config;
+        // Full tile rendering: grid lines, selections, and cell values
+        this.tileRenderer.drawGridLines(canvas, tileX, tileY);
 
-        ctx.clearRect(0, 0, this.tileSize, this.tileSize);
+        if (!this.grid.selection.isEditing) {
+            this.grid.selection.selectedRanges.forEach(range => {
+                this.tileRenderer.drawSelection(canvas, tileX, tileY, range);
+            });
+        }
 
         const tileStartX = tileX * this.tileSize;
         const tileStartY = tileY * this.tileSize;
-
-        // Calculate column and row ranges based on variable widths and heights
-        let startCol = 0;
-        let endCol = 0;
-        let colX = 0;
-        for (let col = 0; col < this.grid.currentColumns; col++) {
-            const colWidth = this.grid.columns.get(col)?.width || config.columnWidth;
-            if (colX >= tileStartX - colWidth && colX <= tileStartX + this.tileSize) {
-                if (!startCol && colX >= tileStartX) startCol = col;
-                endCol = col + 1;
-            }
-            colX += colWidth;
-        }
-        endCol = Math.min(endCol, this.grid.currentColumns);
-
         let startRow = 0;
         let endRow = 0;
         let rowY = 0;
         for (let row = 0; row < this.grid.currentRows; row++) {
-            const rowHeight = this.grid.store.rows.get(row)?.height || config.rowHeight;
+            const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
             if (rowY >= tileStartY - rowHeight && rowY <= tileStartY + this.tileSize) {
                 if (!startRow && rowY >= tileStartY) startRow = row;
                 endRow = row + 1;
@@ -141,184 +133,254 @@ export class CanvasPool {
         }
         endRow = Math.min(endRow, this.grid.currentRows);
 
-        ctx.font = '16px Arial';
-        ctx.lineWidth = 1 / window.devicePixelRatio;
-
-        // Draw cells background
-        ctx.fillStyle = config.colors.cellBg;
-        ctx.fillRect(0, 0, this.tileSize, this.tileSize);
-
-        // Draw vertical grid lines
-        ctx.strokeStyle = config.colors.gridLine;
-        ctx.beginPath();
-        colX = -tileStartX;
+        let startCol = 0;
+        let endCol = 0;
+        let colX = 0;
         for (let col = 0; col < this.grid.currentColumns; col++) {
-            const colWidth = this.grid.columns.get(col)?.width || config.columnWidth;
-            const canvasX = colX + colWidth;
-            if (canvasX >= -1 && canvasX <= this.tileSize + 1 && colWidth > 5) {
-                ctx.moveTo(canvasX - 0.5, 0);
-                ctx.lineTo(canvasX - 0.5, this.tileSize);
+            const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
+            if (colX >= tileStartX - colWidth && colX <= tileStartX + this.tileSize) {
+                if (!startCol && colX >= tileStartX) startCol = col;
+                endCol = col + 1;
             }
             colX += colWidth;
         }
-        ctx.stroke();
+        endCol = Math.min(endCol, this.grid.currentColumns);
 
-        // Draw horizontal grid lines
-        ctx.beginPath();
-        rowY = -tileStartY;
-        for (let row = 0; row < this.grid.currentRows; row++) {
-            const rowHeight = this.grid.store.rows.get(row)?.height || config.rowHeight;
-            const canvasY = rowY + rowHeight;
-            if (canvasY >= -1 && canvasY <= this.tileSize + 1 && rowHeight > 5) {
-                ctx.moveTo(0, canvasY - 0.5);
-                ctx.lineTo(this.tileSize, canvasY - 0.5);
-            }
-            rowY += rowHeight;
-        }
-        ctx.stroke();
-
-        // Draw selection backgrounds
-        if (!this.grid.selection.isEditing) {
-            this.grid.selection.selectedRanges.forEach(range => {
-                const minRow = Math.min(range.startRow, range.endRow);
-                const maxRow = Math.max(range.startRow, range.endRow);
-                const minCol = Math.min(range.startCol, range.endCol);
-                const maxCol = Math.max(range.startCol, range.endCol);
-
-                let selLeft = -tileStartX;
-                for (let col = 0; col < minCol; col++) {
-                    selLeft += this.grid.columns.get(col)?.width || config.columnWidth;
-                }
-                let selWidth = 0;
-                for (let col = minCol; col <= maxCol; col++) {
-                    selWidth += this.grid.columns.get(col)?.width || config.columnWidth;
-                }
-
-                let selTop = -tileStartY;
-                for (let row = 0; row < minRow; row++) {
-                    selTop += this.grid.store.rows.get(row)?.height || config.rowHeight;
-                }
-                let selHeight = 0;
-                for (let row = minRow; row <= maxRow; row++) {
-                    selHeight += this.grid.store.rows.get(row)?.height || config.rowHeight;
-                }
-
-                // Define styles based on selection type
-                let borderStyle, fillStyle, handleFillStyle;
-                switch (range.type) {
-                    case 'row':
-                        borderStyle = config.colors.selectionBorder; // Green
-                        fillStyle = config.colors.selectRangeColor; // Light green fill
-                        handleFillStyle = config.colors.selectionBorder;
-                        break;
-                    case 'column':
-                        borderStyle = config.colors.selectionBorder;
-                        fillStyle = config.colors.selectRangeColor;
-                        handleFillStyle = config.colors.selectionBorder;
-                        break;
-                    case 'cell':
-                        borderStyle = config.colors.selectionBorder;
-                        // fillStyle = 'rgba(255, 200, 200, 0.6)';
-                        handleFillStyle = config.colors.selectionBorder;
-                        break;
-                    case 'cell-range':
-                        borderStyle = config.colors.selectionBorder; // Green (default)
-                        fillStyle = config.colors.selectRangeColor; // Default range color
-                        handleFillStyle = config.colors.selectionBorder;
-                        break;
-                    default:
-                        borderStyle = config.colors.selectionBorder;
-                        fillStyle = config.colors.selectRangeColor;
-                        handleFillStyle = config.colors.selectionBorder;
-                }
-
-                ctx.strokeStyle = borderStyle;
-                ctx.lineWidth = 2;
-                if ( ((this.grid.selection.getSelectedRows().size == 1 || this.grid.selection.getSelectedColumns().size == 1) && (range.type == 'column' || range.type == 'row')) || range.type == 'cell-range' || range.type == 'cell')
-                {
-                    if (minCol % ((config.tileSize / config.columnWidth) - 1) == 1) {
-                        ctx.strokeRect(selLeft + 1, selTop - 1, selWidth - 1, selHeight + 1);
-                        ctx.fillStyle = handleFillStyle;
-                        ctx.fillRect(selLeft + selWidth - 3, selTop + selHeight - 3, 6, 6);
-                        ctx.strokeStyle = 'white';
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(selLeft + selWidth - 3, selTop + selHeight - 3, 6, 6);
-                    }
-                    else if (minCol % ((config.tileSize / config.columnWidth) - 1) == 0) {
-                        ctx.strokeRect(selLeft - 1, selTop - 1, selWidth - 1, selHeight + 1);
-                        ctx.fillStyle = handleFillStyle;
-                        ctx.fillRect(selLeft + selWidth - 6, selTop + selHeight - 3, 6, 6);
-                        ctx.strokeStyle = 'white';
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(selLeft + selWidth - 6, selTop + selHeight - 3, 6, 6);
-                    }
-                    else {
-                        ctx.strokeRect(selLeft - 1, selTop - 1, selWidth + 1, selHeight + 1);
-                        ctx.fillStyle = handleFillStyle;
-                        ctx.fillRect(selLeft + selWidth - 3, selTop + selHeight - 3, 6, 6);
-                        ctx.strokeStyle = 'white';
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(selLeft + selWidth - 3, selTop + selHeight - 3, 6, 6);
-                    }
-                }
-
-                if (!(maxCol == minCol && maxRow == minRow)) {
-                    ctx.fillStyle = fillStyle;
-                    if (minCol % ((config.tileSize / config.columnWidth) - 1) == 1)
-                        ctx.fillRect(selLeft + 2, selTop, selWidth - 3, selHeight - 1);
-                    else if (minCol % ((config.tileSize / config.columnWidth) - 1) == 0)
-                        ctx.fillRect(selLeft, selTop, selWidth - 3, selHeight - 1);
-                    else
-                        ctx.fillRect(selLeft, selTop, selWidth - 1, selHeight - 1);
-                }
-            });
-        }
-
-        // Draw cell values
-        startRow = 0;
-        startCol = 0;
-        ctx.fillStyle = config.colors.cellText;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'bottom';
-        rowY = -tileStartY;
         for (let row = startRow; row < endRow; row++) {
-            const rowHeight = this.grid.store.rows.get(row)?.height || config.rowHeight;
-            colX = -tileStartX;
             for (let col = startCol; col < endCol; col++) {
-                const colWidth = this.grid.columns.get(col)?.width || config.columnWidth;
-                const cell = this.grid.store.getCell(row, col);
-                if (cell.value && colWidth > 15) {
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.rect(colX, rowY, colWidth - 3, rowHeight);
-                    ctx.clip();
-
-                    let canvasX, canvasY;
-                    if (isNaN(cell.value)) {
-                        canvasX = colX + 2;
-                        canvasY = rowY + rowHeight - 3;
-                    } else {
-                        canvasX = colX + colWidth - ctx.measureText(cell.value).width - 3;
-                        canvasY = rowY + rowHeight - 3;
-                    }
-                    ctx.fillText(cell.value, canvasX, canvasY);
-
-                    // Restore context to remove clipping
-                    ctx.restore();
-                }
-                colX += colWidth;
+                this.tileRenderer.drawCellValue(canvas, tileX, tileY, row, col);
             }
-            rowY += rowHeight;
         }
     }
 
     /**
-     * Re-renders all active tiles (used after cell value changes)
+     * Re-renders all active tiles (used after major changes)
      */
     renderTiles() {
         this.activeTiles.forEach((canvas, tileKey) => {
             const [tileX, tileY] = tileKey.split('_').map(Number);
             this.renderTile(canvas, tileX, tileY);
+        });
+        // Update previous selections cache
+        this.previousSelections = new Set(this.grid.selection.selectedRanges.map(range => JSON.stringify(range)));
+    }
+
+    /**
+     * Renders a single cell's value across affected tiles
+     * @param {number} row - Row index of the cell
+     * @param {number} col - Column index of the cell
+     */
+    renderCell(row, col) {
+        this.activeTiles.forEach((canvas, tileKey) => {
+            const [tileX, tileY] = tileKey.split('_').map(Number);
+            const tileStartX = tileX * this.tileSize;
+            const tileStartY = tileY * this.tileSize;
+
+            // Check if the cell is within the tile's bounds
+            let colX = -tileStartX;
+            for (let c = 0; c <= col; c++) {
+                colX += this.grid.columns.get(c)?.width || this.grid.config.columnWidth;
+            }
+            let rowY = -tileStartY;
+            for (let r = 0; r <= row; r++) {
+                rowY += this.grid.store.rows.get(r)?.height || this.grid.config.rowHeight;
+            }
+            const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
+            const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
+
+            if (colX >= -colWidth && colX <= this.tileSize && rowY >= -rowHeight && rowY <= this.tileSize) {
+                const ctx = canvas.getContext('2d');
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(colX, rowY, colWidth, rowHeight);
+                ctx.clip();
+                // Clear the cell area
+                ctx.fillStyle = this.grid.config.colors.cellBg;
+                ctx.fillRect(colX, rowY, colWidth, rowHeight);
+                // Redraw grid lines within the cell
+                ctx.strokeStyle = this.grid.config.colors.gridLine;
+                ctx.lineWidth = 1 / window.devicePixelRatio;
+                ctx.beginPath();
+                if (colWidth > 5) {
+                    ctx.moveTo(colX + colWidth - 0.5, rowY);
+                    ctx.lineTo(colX + colWidth - 0.5, rowY + rowHeight);
+                }
+                if (rowHeight > 5) {
+                    ctx.moveTo(colX, rowY + rowHeight - 0.5);
+                    ctx.lineTo(colX + colWidth, rowY + rowHeight - 0.5);
+                }
+                ctx.stroke();
+                // Draw the cell value
+                this.tileRenderer.drawCellValue(canvas, tileX, tileY, row, col);
+                ctx.restore();
+            }
+        });
+    }
+
+    /**
+     * Renders a single selection range across affected tiles
+     * @param {Object} range - Selection range object
+     */
+    renderSelection(range) {
+        const currentSelections = new Set(this.grid.selection.selectedRanges.map(r => JSON.stringify(r)));
+        const allSelections = new Set([...this.previousSelections, ...currentSelections]);
+
+        this.activeTiles.forEach((canvas, tileKey) => {
+            const [tileX, tileY] = tileKey.split('_').map(Number);
+            const tileStartX = tileX * this.tileSize;
+            const tileStartY = tileY * this.tileSize;
+            const ctx = canvas.getContext('2d');
+
+            // Calculate the bounding box of all affected selections
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            allSelections.forEach(sel => {
+                const r = JSON.parse(sel);
+                let left = -tileStartX;
+                for (let col = 0; col < Math.min(r.startCol, r.endCol); col++) {
+                    left += this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
+                }
+                let width = 0;
+                for (let col = Math.min(r.startCol, r.endCol); col <= Math.max(r.startCol, r.endCol); col++) {
+                    width += this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
+                }
+                let top = -tileStartY;
+                for (let row = 0; row < Math.min(r.startRow, r.endRow); row++) {
+                    top += this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
+                }
+                let height = 0;
+                for (let row = Math.min(r.startRow, r.endRow); row <= Math.max(r.startRow, r.endRow); row++) {
+                    height += this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
+                }
+                if (left < this.tileSize && left + width > 0 && top < this.tileSize && top + height > 0) {
+                    minX = Math.min(minX, left);
+                    maxX = Math.max(maxX, left + width);
+                    minY = Math.min(minY, top);
+                    maxY = Math.max(maxY, top + height);
+                }
+            });
+
+            if (minX !== Infinity) {
+                // Clip to the affected area
+                ctx.save();
+                ctx.beginPath();
+                const padding = 4; // Extra padding to clear selection borders
+                ctx.rect(minX - padding, minY - padding, maxX - minX + 2 * padding, maxY - minY + 2 * padding);
+                ctx.clip();
+                // Clear the affected area
+                ctx.fillStyle = this.grid.config.colors.cellBg;
+                ctx.fillRect(minX - padding, minY - padding, maxX - minX + 2 * padding, maxY - minY + 2 * padding);
+
+                // Redraw grid lines in the affected area
+                let colX = -tileStartX;
+                for (let col = 0; col < this.grid.currentColumns; col++) {
+                    const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
+                    if (colX >= minX - colWidth - padding && colX <= maxX + padding) {
+                        if (colX + colWidth >= minX - padding && colX + colWidth <= maxX + padding && colWidth > 5) {
+                            ctx.strokeStyle = this.grid.config.colors.gridLine;
+                            ctx.lineWidth = 1 / window.devicePixelRatio;
+                            ctx.beginPath();
+                            ctx.moveTo(colX + colWidth - 0.5, minY - padding);
+                            ctx.lineTo(colX + colWidth - 0.5, maxY + padding);
+                            ctx.stroke();
+                        }
+                    }
+                    colX += colWidth;
+                }
+
+                let rowY = -tileStartY;
+                for (let row = 0; row < this.grid.currentRows; row++) {
+                    const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
+                    if (rowY >= minY - rowHeight - padding && rowY <= maxY + padding) {
+                        if (rowY + rowHeight >= minY - padding && rowY + rowHeight <= maxY + padding && rowHeight > 5) {
+                            ctx.strokeStyle = this.grid.config.colors.gridLine;
+                            ctx.lineWidth = 1 / window.devicePixelRatio;
+                            ctx.beginPath();
+                            ctx.moveTo(minX - padding, rowY + rowHeight - 0.5);
+                            ctx.lineTo(maxX + padding, rowY + rowHeight - 0.5);
+                            ctx.stroke();
+                        }
+                    }
+                    rowY += rowHeight;
+                }
+
+                // Redraw cell values in the affected area
+                rowY = -tileStartY;
+                for (let row = 0; row < this.grid.currentRows; row++) {
+                    const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
+                    if (rowY >= minY - rowHeight - padding && rowY <= maxY + padding) {
+                        colX = -tileStartX;
+                        for (let col = 0; col < this.grid.currentColumns; col++) {
+                            const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
+                            if (colX >= minX - colWidth - padding && colX <= maxX + padding) {
+                                this.tileRenderer.drawCellValue(canvas, tileX, tileY, row, col);
+                            }
+                            colX += colWidth;
+                        }
+                    }
+                    rowY += rowHeight;
+                }
+
+                // Draw all current selections
+                if (!this.grid.selection.isEditing) {
+                    this.grid.selection.selectedRanges.forEach(selRange => {
+                        this.tileRenderer.drawSelection(canvas, tileX, tileY, selRange);
+                    });
+                }
+                ctx.restore();
+            }
+        });
+
+        // Update previous selections cache
+        this.previousSelections = currentSelections;
+    }
+
+    /**
+     * Renders grid lines across all active tiles (used after resizing)
+     */
+    renderGridLines() {
+        this.activeTiles.forEach((canvas, tileKey) => {
+            const [tileX, tileY] = tileKey.split('_').map(Number);
+            this.tileRenderer.drawGridLines(canvas, tileX, tileY);
+            // Redraw cell values and selections to preserve them
+            const tileStartX = tileX * this.tileSize;
+            const tileStartY = tileY * this.tileSize;
+            let startRow = 0;
+            let endRow = 0;
+            let rowY = 0;
+            for (let row = 0; row < this.grid.currentRows; row++) {
+                const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
+                if (rowY >= tileStartY - rowHeight && rowY <= tileStartY + this.tileSize) {
+                    if (!startRow && rowY >= tileStartY) startRow = row;
+                    endRow = row + 1;
+                }
+                rowY += rowHeight;
+            }
+            endRow = Math.min(endRow, this.grid.currentRows);
+
+            let startCol = 0;
+            let endCol = 0;
+            let colX = 0;
+            for (let col = 0; col < this.grid.currentColumns; col++) {
+                const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
+                if (colX >= tileStartX - colWidth && colX <= tileStartX + this.tileSize) {
+                    if (!startCol && colX >= tileStartX) startCol = col;
+                    endCol = col + 1;
+                }
+                colX += colWidth;
+            }
+            endCol = Math.min(endCol, this.grid.currentColumns);
+
+            for (let row = startRow; row < endRow; row++) {
+                for (let col = startCol; col < endCol; col++) {
+                    this.tileRenderer.drawCellValue(canvas, tileX, tileY, row, col);
+                }
+            }
+
+            if (!this.grid.selection.isEditing) {
+                this.grid.selection.selectedRanges.forEach(range => {
+                    this.tileRenderer.drawSelection(canvas, tileX, tileY, range);
+                });
+            }
         });
     }
 

@@ -1,7 +1,7 @@
 /**
  * Manages cell selection in the grid
  */
- export class Selection {
+export class Selection {
     /**
      * Initializes the Selection object
      * @param {ExcelGrid} grid - Reference to the main ExcelGrid instance
@@ -28,7 +28,7 @@
     /**
      * Sets up event listeners for selection
      */
-     setupEventListeners() {
+    setupEventListeners() {
         const horizontalHeader = document.querySelector('#horizontal-header');
         const verticalHeader = document.querySelector('#vertical-header');
 
@@ -55,7 +55,7 @@
                     startCol: col,
                     endRow: this.grid.currentRows - 1,
                     endCol: col,
-                    type: 'column' // Add type
+                    type: 'column'
                 };
 
                 if (e.ctrlKey || e.metaKey) {
@@ -71,7 +71,9 @@
                 this.endCell = { row: range.endRow, col: range.endCol, address: `${this.grid.columnNumberToLetter(range.endCol)}${range.endRow + 1}` };
                 
                 this.grid.updateStatusBar();
-                this.grid.render();
+                this.grid.canvasPool.renderSelection(range); // Optimized: Render only the selection
+                this.grid.drawColumnHeaders(); // Update headers for selection highlight
+                this.grid.drawRowHeaders();
             });
         }
 
@@ -114,7 +116,9 @@
                 this.endCell = { row: range.endRow, col: range.endCol, address: `${this.grid.columnNumberToLetter(range.endCol)}${range.endRow + 1}` };
                 
                 this.grid.updateStatusBar();
-                this.grid.render();
+                this.grid.canvasPool.renderSelection(range); // Optimized: Render only the selection
+                this.grid.drawRowHeaders(); // Update headers for selection highlight
+                this.grid.drawColumnHeaders();
             });
         }
 
@@ -131,7 +135,7 @@
                     startCol: cell.col,
                     endRow: cell.row,
                     endCol: cell.col,
-                    type: 'cell' // Add type for single cell
+                    type: 'cell'
                 };
 
                 if (e.ctrlKey || e.metaKey) {
@@ -147,7 +151,9 @@
                 this.endCell = cell;
                 this.isSelecting = true;
                 this.grid.updateStatusBar();
-                this.grid.render();
+                this.grid.canvasPool.renderSelection(range); // Optimized: Render only the selection
+                this.grid.drawColumnHeaders(); // Update headers for selection highlight
+                this.grid.drawRowHeaders();
             }
         });
 
@@ -175,9 +181,10 @@
                         this.endCell.col,
                         true
                     );
-                    this.grid.canvasPool.renderTiles();
+                    this.grid.canvasPool.renderSelection(range); // Optimized: Render only the selection
                     this.grid.updateStatusBar();
-                    this.grid.render();
+                    this.grid.drawColumnHeaders(); // Update headers for selection highlight
+                    this.grid.drawRowHeaders();
                 }
             }
         });
@@ -198,10 +205,11 @@
                 this.endCell = cell;
                 this.isEditing = true;
                 this.store.clearSelections();
-                this.selectedRanges = [{ startRow: cell.row, startCol: cell.col, endRow: cell.row, endCol: cell.col }];
+                const range = { startRow: cell.row, startCol: cell.col, endRow: cell.row, endCol: cell.col, type: 'cell' };
+                this.selectedRanges = [range];
                 this.store.setSelectionRange(cell.row, cell.col, cell.row, cell.col, true);
                 this.createInputBox(cell);
-                // Do not call grid.render() to avoid scrolling
+                // Do not render to avoid scrolling
             }
         });
 
@@ -214,10 +222,11 @@
                 e.preventDefault();
                 this.isEditing = true;
                 this.store.clearSelections();
-                this.selectedRanges = [{ startRow: this.startCell.row, startCol: this.startCell.col, endRow: this.startCell.row, endCol: this.startCell.col }];
+                const range = { startRow: this.startCell.row, startCol: this.startCell.col, endRow: this.startCell.row, endCol: this.startCell.col, type: 'cell' };
+                this.selectedRanges = [range];
                 this.store.setSelectionRange(this.startCell.row, this.startCell.col, this.startCell.row, this.startCell.col, true);
                 this.createInputBox(this.startCell, e.key);
-                // Do not call grid.render() to avoid scrolling
+                // Do not render to avoid scrolling
                 return;
             }
 
@@ -231,8 +240,7 @@
                     e.preventDefault();
                     if (e.shiftKey) {
                         newCol = Math.max(0, newCol - 1);
-                    }
-                    else {
+                    } else {
                         newCol = Math.min(this.grid.currentColumns - 1, newCol + 1);
                     }
                     break;
@@ -256,6 +264,13 @@
                     e.preventDefault();
                     newRow = Math.min(this.grid.currentRows - 1, newRow + 1);
                     break;
+                case 'Escape':
+                    this.reset();
+                    this.grid.canvasPool.renderTiles(); // Full redraw to clear selections
+                    this.grid.drawColumnHeaders();
+                    this.grid.drawRowHeaders();
+                    this.grid.updateStatusBar();
+                    return;
                 default:
                     return;
             }
@@ -264,13 +279,16 @@
                 return;
             
             this.store.clearSelections();
-            this.selectedRanges = [{ startRow: newRow, startCol: newCol, endRow: newRow, endCol: newCol, type: 'cell'}];
+            const range = { startRow: newRow, startCol: newCol, endRow: newRow, endCol: newCol, type: 'cell' };
+            this.selectedRanges = [range];
             this.store.setSelectionRange(newRow, newCol, newRow, newCol, true);
             this.grid.scrollToCell(newRow, this.startCell.row, newCol, this.startCell.col);
             this.startCell = { row: newRow, col: newCol, address: `${this.grid.columnNumberToLetter(newCol)}${newRow + 1}` };
             this.endCell = this.startCell;
             this.grid.updateStatusBar();
-            this.grid.render();
+            this.grid.canvasPool.renderSelection(range); // Optimized: Render only the selection
+            this.grid.drawColumnHeaders(); // Update headers for selection highlight
+            this.grid.drawRowHeaders();
         });
     }
 
@@ -307,8 +325,6 @@
         const inputBox = document.createElement('input');
         inputBox.type = 'text';
         inputBox.style.position = 'absolute';
-        // inputBox.style.all = 'unset';
-        // inputBox.style.padding = '0px 0px 0px 3px';
         inputBox.style.margin = '0';
         inputBox.style.width = `${width - 6}px`;
         inputBox.style.height = `${height - 2}px`;
@@ -318,8 +334,8 @@
         inputBox.style.outline = 'none';
         inputBox.style.border = 'none';
         inputBox.style.zIndex = '1000';
-        inputBox.style.left = `${left+3}px`;
-        inputBox.style.top = `${top+1}px`;
+        inputBox.style.left = `${left + 3}px`;
+        inputBox.style.top = `${top + 1}px`;
         inputBox.value = initialValue || this.store.getCell(cell.row, cell.col).value || '';
         
         this.canvasContainer.appendChild(inputBox);
@@ -329,7 +345,11 @@
             this.store.setCellValue(cell.row, cell.col, inputBox.value);
             this.isEditing = false;
             inputBox.remove();
-            this.grid.render();
+            this.grid.canvasPool.renderCell(cell.row, cell.col); // Optimized: Render only the cell value
+            this.grid.canvasPool.renderSelection(range); // Restore selection
+            this.grid.drawColumnHeaders(); // Update headers for selection highlight
+            this.grid.drawRowHeaders();
+            this.grid.updateStatusBar();
         };
 
         inputBox.addEventListener('blur', saveValue);
@@ -338,30 +358,40 @@
             if (e.key === 'Enter') {
                 saveValue();
                 this.store.clearSelections();
-                this.selectedRanges = [{ startRow: this.startCell.row, startCol: this.startCell.col, endRow: this.startCell.row, endCol: this.startCell.col }];
-                this.store.setSelectionRange(this.startCell.row+1, this.startCell.col, this.startCell.row+1, this.startCell.col, true);
-                this.grid.scrollToCell(this.startCell.row, cell.row, this.startCell.col, cell.col);
+                const newRow = Math.min(this.grid.currentRows - 1, cell.row + 1);
+                const range = { startRow: newRow, startCol: cell.col, endRow: newRow, endCol: cell.col, type: 'cell' };
+                this.selectedRanges = [range];
+                this.store.setSelectionRange(newRow, cell.col, newRow, cell.col, true);
+                this.grid.scrollToCell(newRow, cell.row, cell.col, cell.col);
+                this.startCell = { row: newRow, col: cell.col, address: `${this.grid.columnNumberToLetter(cell.col)}${newRow + 1}` };
                 this.endCell = this.startCell;
+                this.grid.canvasPool.renderSelection(range); // Optimized: Render only the selection
+                this.grid.drawColumnHeaders(); // Update headers for selection highlight
+                this.grid.drawRowHeaders();
                 this.grid.updateStatusBar();
-                this.grid.render();
             } else if (e.key === 'Escape') {
                 this.isEditing = false;
                 this.store.clearSelections();
                 inputBox.value = '';
                 inputBox.remove();
-                // this.grid.canvasPool.renderTiles();
-                this.grid.render();
+                this.grid.canvasPool.renderSelection(range); // Optimized: Restore selection
+                this.grid.drawColumnHeaders();
+                this.grid.drawRowHeaders();
+                this.grid.updateStatusBar();
             } else if (e.key === 'Tab') {
                 saveValue();
                 this.store.clearSelections();
                 const newCol = e.shiftKey ? Math.max(0, cell.col - 1) : Math.min(this.grid.currentColumns - 1, cell.col + 1);
-                this.startCell = { row: cell.row, col: newCol, address: `${this.grid.columnNumberToLetter(newCol)}${cell.row + 1}` };
-                this.endCell = this.startCell;
-                this.selectedRanges = [{ startRow: cell.row, startCol: newCol, endRow: cell.row, endCol: newCol }];
+                const range = { startRow: cell.row, startCol: newCol, endRow: cell.row, endCol: newCol, type: 'cell' };
+                this.selectedRanges = [range];
                 this.store.setSelectionRange(cell.row, newCol, cell.row, newCol, true);
                 this.grid.scrollToCell(cell.row, cell.row, newCol, cell.col);
+                this.startCell = { row: cell.row, col: newCol, address: `${this.grid.columnNumberToLetter(newCol)}${cell.row + 1}` };
+                this.endCell = this.startCell;
+                this.grid.canvasPool.renderSelection(range); // Optimized: Render only the selection
+                this.grid.drawColumnHeaders(); // Update headers for selection highlight
+                this.grid.drawRowHeaders();
                 this.grid.updateStatusBar();
-                this.grid.render();
             }
         });
     }
@@ -427,5 +457,9 @@
         this.isEditing = false;
         this.selectedRanges = [];
         this.store.clearSelections();
+        this.grid.canvasPool.renderTiles(); // Full redraw to clear selections
+        this.grid.drawColumnHeaders();
+        this.grid.drawRowHeaders();
+        this.grid.updateStatusBar();
     }
 }
