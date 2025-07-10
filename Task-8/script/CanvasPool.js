@@ -108,6 +108,31 @@ export class CanvasPool {
         }
     }
 
+    horizontalGridLines(rowY, endRow, tileStartY, startRow) {
+        for (let row = 0; row < this.grid.currentRows; row++) {
+            const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
+            if (rowY >= tileStartY - rowHeight && rowY <= tileStartY + this.tileSize) {
+                if (!startRow && rowY >= tileStartY)
+                    startRow = row;
+                endRow = row + 1;
+            }
+            rowY += rowHeight;
+        }
+        return {rowY, endRow, startRow};
+    }
+
+    verticalGridLines(colX, endCol, tileStartX, startCol) {
+        for (let col = 0; col < this.grid.currentColumns; col++) {
+            const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
+            if (colX >= tileStartX - colWidth && colX <= tileStartX + this.tileSize) {
+                if (!startCol && colX >= tileStartX) startCol = col;
+                endCol = col + 1;
+            }
+            colX += colWidth;
+        }
+        return {colX, endCol, startCol};
+    }
+
     renderTile(canvas, tileX, tileY) {
         // Full tile rendering: grid lines, selections, and cell values
         this.tileRenderer.drawGridLines(canvas, tileX, tileY);
@@ -123,27 +148,13 @@ export class CanvasPool {
         let startRow = 0;
         let endRow = 0;
         let rowY = 0;
-        for (let row = 0; row < this.grid.currentRows; row++) {
-            const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
-            if (rowY >= tileStartY - rowHeight && rowY <= tileStartY + this.tileSize) {
-                if (!startRow && rowY >= tileStartY) startRow = row;
-                endRow = row + 1;
-            }
-            rowY += rowHeight;
-        }
+        ({rowY, endRow, startRow} = this.horizontalGridLines(rowY, endRow, tileStartY, startRow));
         endRow = Math.min(endRow, this.grid.currentRows);
 
         let startCol = 0;
         let endCol = 0;
         let colX = 0;
-        for (let col = 0; col < this.grid.currentColumns; col++) {
-            const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
-            if (colX >= tileStartX - colWidth && colX <= tileStartX + this.tileSize) {
-                if (!startCol && colX >= tileStartX) startCol = col;
-                endCol = col + 1;
-            }
-            colX += colWidth;
-        }
+        ({colX, endCol, startCol} = this.verticalGridLines(colX, endCol, tileStartX, startCol));
         endCol = Math.min(endCol, this.grid.currentColumns);
 
         for (let row = startRow; row < endRow; row++) {
@@ -212,6 +223,7 @@ export class CanvasPool {
                 ctx.stroke();
                 // Draw the cell value
                 this.tileRenderer.drawCellValue(canvas, tileX, tileY, row, col);
+                console.log('No way!!!!', row, col);
                 ctx.restore();
             }
         });
@@ -223,6 +235,7 @@ export class CanvasPool {
      */
     renderSelection(range) {
         const currentSelections = new Set(this.grid.selection.selectedRanges.map(r => JSON.stringify(r)));
+        console.log(currentSelections);
         const allSelections = new Set([...this.previousSelections, ...currentSelections]);
 
         this.activeTiles.forEach((canvas, tileKey) => {
@@ -347,27 +360,13 @@ export class CanvasPool {
             let startRow = 0;
             let endRow = 0;
             let rowY = 0;
-            for (let row = 0; row < this.grid.currentRows; row++) {
-                const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
-                if (rowY >= tileStartY - rowHeight && rowY <= tileStartY + this.tileSize) {
-                    if (!startRow && rowY >= tileStartY) startRow = row;
-                    endRow = row + 1;
-                }
-                rowY += rowHeight;
-            }
+            ({rowY, endRow, startRow} = this.horizontalGridLines(rowY, endRow, tileStartY, startRow));
             endRow = Math.min(endRow, this.grid.currentRows);
 
             let startCol = 0;
             let endCol = 0;
             let colX = 0;
-            for (let col = 0; col < this.grid.currentColumns; col++) {
-                const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
-                if (colX >= tileStartX - colWidth && colX <= tileStartX + this.tileSize) {
-                    if (!startCol && colX >= tileStartX) startCol = col;
-                    endCol = col + 1;
-                }
-                colX += colWidth;
-            }
+            ({colX, endCol, startCol} = this.verticalGridLines(colX, endCol, tileStartX, startCol));
             endCol = Math.min(endCol, this.grid.currentColumns);
 
             for (let row = startRow; row < endRow; row++) {
