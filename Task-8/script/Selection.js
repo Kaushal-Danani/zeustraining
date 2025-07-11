@@ -1,7 +1,7 @@
 /**
  * Manages cell selection in the grid
  */
-export class Selection {
+ export class Selection {
     /**
      * Initializes the Selection object
      * @param {ExcelGrid} grid - Reference to the main ExcelGrid instance
@@ -19,6 +19,7 @@ export class Selection {
         this.endCell = null;
         this.isSelecting = false;
         this.isEditing = false;
+        this.inputBox = null;
         this.isHeaderSelecting = false; // Track header dragging
         this.selectedRanges = []; // Store multiple selection ranges
 
@@ -28,9 +29,9 @@ export class Selection {
 
     rerenderSelectionChangeEffect = (range) => {
         this.grid.updateStatusBar();
-        this.grid.canvasPool.renderSelection(range); // Optimized: Render only the selection
         this.grid.headerRenderer.drawColumnHeaders(); // Update Column headers for selection highlight
         this.grid.headerRenderer.drawRowHeaders(); // Update Row headers for selection highlight
+        this.grid.canvasPool.renderSelection(range); // Optimized: Render only the selection
     }
 
     /**
@@ -232,7 +233,10 @@ export class Selection {
 
         this.canvasContainer.addEventListener('pointerdown', (e) => {
             if (e.button !== 0) return;
-            console.log("Howww????")
+            if (this.isEditing) {
+                const range = this.selectedRanges.find(r => r.startRow === this.startCell.row && r.startCol === this.startCell.col && r.endRow === this.endCell.row && r.endCol === this.endCell.col) || this.selectedRanges[0];
+                this.saveValue(this.startCell.row, this.startCell.col, this.inputBox, range);
+            }
 
             const x = e.clientX - this.config.headerWidth;
             const y = e.clientY - this.config.headerHeight;
@@ -246,7 +250,6 @@ export class Selection {
                     endCol: cell.col,
                     type: 'cell'
                 };
-                console.log(range)
 
                 if (e.ctrlKey || e.metaKey) {
                     this.selectedRanges = this.selectedRanges.filter(r => r.startRow !== cell.row || r.startCol !== cell.col || r.endRow !== cell.row || r.endCol !== cell.col);
@@ -317,9 +320,9 @@ export class Selection {
             }
         });
 
-        window.addEventListener('keydown', (e) => {
+        this.canvasContainer.addEventListener('keydown', (e) => {
             if (this.isEditing) return;
-
+            
             // Handle alphanumeric or special character input to start editing
             const isAlphanumericOrSpecial = /^[a-zA-Z0-9`~!@#$%^&*()_+\-=\[\]{}\\|;:'",.<>\/?]$/.test(e.key);
             if (isAlphanumericOrSpecial && this.startCell) {
@@ -386,10 +389,13 @@ export class Selection {
         });
     }
 
-    saveValue = (row, col, inputBox, range) => {
-        this.store.setCellValue(row, col, inputBox.value);
+    saveValue = (row, col, range) => {
+        this.store.setCellValue(row, col, this.inputBox.value);
         this.isEditing = false;
-        inputBox.remove();
+        if (this.inputBox) {
+            this.inputBox.remove();
+            this.inputBox = null;
+        }
         this.rerenderSelectionChangeEffect(range);
         this.grid.canvasPool.renderCell(row, col); // Optimized: Render only the cell value
     };
@@ -424,41 +430,37 @@ export class Selection {
             height += this.grid.store.rows.get(row)?.height || this.config.rowHeight;
         }
 
-        const inputBox = document.createElement('input');
-        inputBox.type = 'text';
-        inputBox.style.position = 'absolute';
-        inputBox.style.margin = '0';
-        inputBox.style.width = `${width - 6}px`;
-        inputBox.style.height = `${height - 2}px`;
-        inputBox.style.background = 'white';
-        inputBox.style.font = `16px Arial`;
-        inputBox.style.color = this.config.colors.cellText;
-        inputBox.style.outline = 'none';
-        inputBox.style.border = 'none';
-        inputBox.style.zIndex = '1000';
-        inputBox.style.left = `${left + 3}px`;
-        inputBox.style.top = `${top + 1}px`;
-        inputBox.value = initialValue || this.store.getCell(cell.row, cell.col).value || '';
+        this.inputBox = document.createElement('input');
+        this.inputBox.type = 'text';
+        this.inputBox.style.position = 'absolute';
+        this.inputBox.style.margin = '0';
+        this.inputBox.style.width = `${width - 6}px`;
+        this.inputBox.style.height = `${height - 3}px`;
+        this.inputBox.style.background = 'white';
+        this.inputBox.style.font = `16px Arial`;
+        this.inputBox.style.color = this.config.colors.cellText;
+        this.inputBox.style.outline = 'none';
+        this.inputBox.style.border = 'none';
+        this.inputBox.style.zIndex = '1000';
+        this.inputBox.style.left = `${left + 3}px`;
+        this.inputBox.style.top = `${top + 1}px`;
+        this.inputBox.value = initialValue || this.store.getCell(cell.row, cell.col).value || '';
         
-        this.canvasContainer.appendChild(inputBox);
-        inputBox.focus();
+        this.canvasContainer.appendChild(this.inputBox);
+        this.inputBox.focus();
 
-        inputBox.addEventListener('keydown', (e) => {
+        this.inputBox.addEventListener('keydown', (e) => {
+            console.log('Keydown');
             if (e.key === 'Enter') {
-                // this.store.clearSelections();
-                this.saveValue(cell.row, cell.col, inputBox, range);
+                this.saveValue(cell.row, cell.col, range);
             } else if (e.key === 'Escape') {
                 this.isEditing = false;
-                inputBox.value = '';
-                inputBox.remove();
+                this.inputBox.value = '';
+                this.inputBox.remove();
+                this.inputBox = null;
             } else if (e.key === 'Tab') {
-                // this.store.clearSelections();
-                this.saveValue(cell.row, cell.col, inputBox, range);
+                this.saveValue(cell.row, cell.col, range);
             }
-        });
-
-        inputBox.addEventListener('blur', () => {
-            this.saveValue(cell.row, cell.col, inputBox, range);
         });
     }
 

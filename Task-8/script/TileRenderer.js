@@ -91,7 +91,7 @@ export class TileRenderer {
             if (!(maxCol === minCol && maxRow === minRow)) {
                 ctx.fillStyle = fillStyle;
                 const fillOffsetX = minCol % ((this.config.tileSize / this.config.columnWidth) - 1);
-                ctx.fillRect(selLeft + (fillOffsetX === 0 || fillOffsetX === 1 ? 2 : 0), selTop, selWidth - (fillOffsetX === 1 || fillOffsetX === 0 ? 4 : 1), selHeight - 2.5);
+                ctx.fillRect(selLeft + (fillOffsetX === 0 || fillOffsetX === 1 ? 2 : 0), selTop, selWidth - (fillOffsetX === 1 || fillOffsetX === 0 ? 4 : 1), selHeight - 1 );
             }
         }
     }
@@ -118,7 +118,7 @@ export class TileRenderer {
 
         const colWidth = this.grid.columns.get(col)?.width || this.config.columnWidth;
         const rowHeight = this.grid.store.rows.get(row)?.height || this.config.rowHeight;
-
+        
         let colX = -tileX * this.tileSize;
         for (let i = 0; i < col; i++) {
             colX += this.grid.columns.get(i)?.width || this.config.columnWidth;
@@ -140,54 +140,10 @@ export class TileRenderer {
                     ? colX + 2 
                     : colX + colWidth - ctx.measureText(cell.value).width - 3;
                 const canvasY = rowY + rowHeight - 3;
+                console.log("Cell Value at:",canvasX, canvasY);
                 ctx.fillText(cell.value, canvasX, canvasY);
 
                 ctx.restore();
-            }
-        }
-    }
-
-    renderTile(canvas, tileX, tileY) {
-        // Full tile rendering: grid lines, selections, and cell values
-        this.drawGridLines(canvas, tileX, tileY);
-
-        if (!this.grid.selection.isEditing) {
-            this.grid.selection.selectedRanges.forEach(range => {
-                this.drawSelection(canvas, tileX, tileY, range);
-            });
-        }
-
-        const tileStartX = tileX * this.tileSize;
-        const tileStartY = tileY * this.tileSize;
-        let startRow = 0;
-        let endRow = 0;
-        let rowY = 0;
-        for (let row = 0; row < this.grid.currentRows; row++) {
-            const rowHeight = this.grid.store.rows.get(row)?.height || this.config.rowHeight;
-            if (rowY >= tileStartY - rowHeight && rowY <= tileStartY + this.tileSize) {
-                if (!startRow && rowY >= tileStartY) startRow = row;
-                endRow = row + 1;
-            }
-            rowY += rowHeight;
-        }
-        endRow = Math.min(endRow, this.grid.currentRows);
-
-        let startCol = 0;
-        let endCol = 0;
-        let colX = 0;
-        for (let col = 0; col < this.grid.currentColumns; col++) {
-            const colWidth = this.grid.columns.get(col)?.width || this.config.columnWidth;
-            if (colX >= tileStartX - colWidth && colX <= tileStartX + this.tileSize) {
-                if (!startCol && colX >= tileStartX) startCol = col;
-                endCol = col + 1;
-            }
-            colX += colWidth;
-        }
-        endCol = Math.min(endCol, this.grid.currentColumns);
-
-        for (let row = startRow; row < endRow; row++) {
-            for (let col = startCol; col < endCol; col++) {
-                this.drawCellValue(canvas, tileX, tileY, row, col);
             }
         }
     }

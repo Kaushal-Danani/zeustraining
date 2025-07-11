@@ -108,7 +108,7 @@ export class CanvasPool {
         }
     }
 
-    horizontalGridLines(rowY, endRow, tileStartY, startRow) {
+    rowRangeOfTile(rowY, endRow, tileStartY, startRow) {
         for (let row = 0; row < this.grid.currentRows; row++) {
             const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
             if (rowY >= tileStartY - rowHeight && rowY <= tileStartY + this.tileSize) {
@@ -121,11 +121,12 @@ export class CanvasPool {
         return {rowY, endRow, startRow};
     }
 
-    verticalGridLines(colX, endCol, tileStartX, startCol) {
+    columnRangeOfTile(colX, endCol, tileStartX, startCol) {
         for (let col = 0; col < this.grid.currentColumns; col++) {
             const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
             if (colX >= tileStartX - colWidth && colX <= tileStartX + this.tileSize) {
-                if (!startCol && colX >= tileStartX) startCol = col;
+                if (!startCol && colX >= tileStartX) 
+                    startCol = col;
                 endCol = col + 1;
             }
             colX += colWidth;
@@ -148,13 +149,13 @@ export class CanvasPool {
         let startRow = 0;
         let endRow = 0;
         let rowY = 0;
-        ({rowY, endRow, startRow} = this.horizontalGridLines(rowY, endRow, tileStartY, startRow));
+        ({rowY, endRow, startRow} = this.rowRangeOfTile(rowY, endRow, tileStartY, startRow));
         endRow = Math.min(endRow, this.grid.currentRows);
 
         let startCol = 0;
         let endCol = 0;
         let colX = 0;
-        ({colX, endCol, startCol} = this.verticalGridLines(colX, endCol, tileStartX, startCol));
+        ({colX, endCol, startCol} = this.columnRangeOfTile(colX, endCol, tileStartX, startCol));
         endCol = Math.min(endCol, this.grid.currentColumns);
 
         for (let row = startRow; row < endRow; row++) {
@@ -173,7 +174,7 @@ export class CanvasPool {
             this.renderTile(canvas, tileX, tileY);
         });
         // Update previous selections cache
-        this.previousSelections = new Set(this.grid.selection.selectedRanges.map(range => JSON.stringify(range)));
+        // this.previousSelections = new Set(this.grid.selection.selectedRanges.map(range => JSON.stringify(range)));
     }
 
     /**
@@ -199,8 +200,9 @@ export class CanvasPool {
             const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
             const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
 
+            const ctx = canvas.getContext('2d');
             if (colX >= -colWidth && colX <= this.tileSize && rowY >= -rowHeight && rowY <= this.tileSize) {
-                const ctx = canvas.getContext('2d');
+                console.log("Cell Render:",row, col);
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(colX, rowY, colWidth, rowHeight);
@@ -223,7 +225,6 @@ export class CanvasPool {
                 ctx.stroke();
                 // Draw the cell value
                 this.tileRenderer.drawCellValue(canvas, tileX, tileY, row, col);
-                console.log('No way!!!!', row, col);
                 ctx.restore();
             }
         });
@@ -235,7 +236,6 @@ export class CanvasPool {
      */
     renderSelection(range) {
         const currentSelections = new Set(this.grid.selection.selectedRanges.map(r => JSON.stringify(r)));
-        console.log(currentSelections);
         const allSelections = new Set([...this.previousSelections, ...currentSelections]);
 
         this.activeTiles.forEach((canvas, tileKey) => {
@@ -287,15 +287,13 @@ export class CanvasPool {
                 let colX = -tileStartX;
                 for (let col = 0; col < this.grid.currentColumns; col++) {
                     const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
-                    if (colX >= minX - colWidth - padding && colX <= maxX + padding) {
-                        if (colX + colWidth >= minX - padding && colX + colWidth <= maxX + padding && colWidth > 5) {
-                            ctx.strokeStyle = this.grid.config.colors.gridLine;
-                            ctx.lineWidth = 1 / window.devicePixelRatio;
-                            ctx.beginPath();
-                            ctx.moveTo(colX + colWidth - 0.5, minY - padding);
-                            ctx.lineTo(colX + colWidth - 0.5, maxY + padding);
-                            ctx.stroke();
-                        }
+                    if (colX + colWidth >= minX - padding && colX + colWidth <= maxX + padding && colWidth > 5) {
+                        ctx.strokeStyle = this.grid.config.colors.gridLine;
+                        ctx.lineWidth = 1 / window.devicePixelRatio;
+                        ctx.beginPath();
+                        ctx.moveTo(colX + colWidth - 0.5, minY - padding);
+                        ctx.lineTo(colX + colWidth - 0.5, maxY + padding);
+                        ctx.stroke();
                     }
                     colX += colWidth;
                 }
@@ -303,17 +301,22 @@ export class CanvasPool {
                 let rowY = -tileStartY;
                 for (let row = 0; row < this.grid.currentRows; row++) {
                     const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
-                    if (rowY >= minY - rowHeight - padding && rowY <= maxY + padding) {
-                        if (rowY + rowHeight >= minY - padding && rowY + rowHeight <= maxY + padding && rowHeight > 5) {
-                            ctx.strokeStyle = this.grid.config.colors.gridLine;
-                            ctx.lineWidth = 1 / window.devicePixelRatio;
-                            ctx.beginPath();
-                            ctx.moveTo(minX - padding, rowY + rowHeight - 0.5);
-                            ctx.lineTo(maxX + padding, rowY + rowHeight - 0.5);
-                            ctx.stroke();
-                        }
+                    if (rowY + rowHeight >= minY - padding && rowY + rowHeight <= maxY + padding && rowHeight > 5) {
+                        ctx.strokeStyle = this.grid.config.colors.gridLine;
+                        ctx.lineWidth = 1 / window.devicePixelRatio;
+                        ctx.beginPath();
+                        ctx.moveTo(minX - padding, rowY + rowHeight - 0.5);
+                        ctx.lineTo(maxX + padding, rowY + rowHeight - 0.5);
+                        ctx.stroke();
                     }
                     rowY += rowHeight;
+                }
+
+                // Draw all current selections
+                if (!this.grid.selection.isEditing) {
+                    this.grid.selection.selectedRanges.forEach(selRange => {
+                        this.tileRenderer.drawSelection(canvas, tileX, tileY, selRange);
+                    });
                 }
 
                 // Redraw cell values in the affected area
@@ -331,13 +334,6 @@ export class CanvasPool {
                         }
                     }
                     rowY += rowHeight;
-                }
-
-                // Draw all current selections
-                if (!this.grid.selection.isEditing) {
-                    this.grid.selection.selectedRanges.forEach(selRange => {
-                        this.tileRenderer.drawSelection(canvas, tileX, tileY, selRange);
-                    });
                 }
                 ctx.restore();
             }
@@ -360,25 +356,25 @@ export class CanvasPool {
             let startRow = 0;
             let endRow = 0;
             let rowY = 0;
-            ({rowY, endRow, startRow} = this.horizontalGridLines(rowY, endRow, tileStartY, startRow));
+            ({rowY, endRow, startRow} = this.rowRangeOfTile(rowY, endRow, tileStartY, startRow));
             endRow = Math.min(endRow, this.grid.currentRows);
 
             let startCol = 0;
             let endCol = 0;
             let colX = 0;
-            ({colX, endCol, startCol} = this.verticalGridLines(colX, endCol, tileStartX, startCol));
+            ({colX, endCol, startCol} = this.columnRangeOfTile(colX, endCol, tileStartX, startCol));
             endCol = Math.min(endCol, this.grid.currentColumns);
+            
+            if (!this.grid.selection.isEditing) {
+                this.grid.selection.selectedRanges.forEach(range => {
+                    this.tileRenderer.drawSelection(canvas, tileX, tileY, range);
+                });
+            }
 
             for (let row = startRow; row < endRow; row++) {
                 for (let col = startCol; col < endCol; col++) {
                     this.tileRenderer.drawCellValue(canvas, tileX, tileY, row, col);
                 }
-            }
-
-            if (!this.grid.selection.isEditing) {
-                this.grid.selection.selectedRanges.forEach(range => {
-                    this.tileRenderer.drawSelection(canvas, tileX, tileY, range);
-                });
             }
         });
     }
