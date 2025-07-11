@@ -4,6 +4,12 @@ import { Store } from "./Store.js";
 import { Column } from "./Column.js";
 import { Selection } from "./Selection.js";
 import { HeaderRenderer } from "./HeaderRenderer.js";
+import { EventManager } from './events/EventManager.js';
+import { CellSelectorEvents } from './events/CellSelectorEvents.js';
+import { RowSelectorEvents } from './events/RowSelectorEvents.js';
+import { ColumnSelectorEvents } from './events/ColumnSelectorEvents.js';
+import { RowResizerEvents } from './events/RowResizerEvents.js';
+import { ColumnResizerEvents } from './events/ColumnResizerEvents.js';
 
 /**
  * Main Excel Grid class with adaptive content loading
@@ -88,6 +94,8 @@ export class ExcelGrid {
         
         /** @type {Selection} Selection manager */
         this.selection = new Selection(this, this.store, this.config, this.canvasContainer);
+
+        this.eventManager = new EventManager(this, this.selection);
         
         /** @type {HeaderRenderer} Header renderer */
         this.headerRenderer = new HeaderRenderer(this);
@@ -95,7 +103,7 @@ export class ExcelGrid {
         this.initializeCanvas();
         this.updateScrollContent();
         this.setupEventListeners();
-        this.setupResizeHandles();
+        // this.setupResizeHandles();
         this.updateViewport();
         this.render();
     }
@@ -175,8 +183,11 @@ export class ExcelGrid {
             this.headerRenderer.drawRowHeaders();
         });
 
-        // Delegate selection-related event listeners to the Selection class
-        this.selection.setupEventListeners();
+        this.eventManager.registerHandler(new RowSelectorEvents(this, this.selection));
+        this.eventManager.registerHandler(new ColumnSelectorEvents(this, this.selection));
+        this.eventManager.registerHandler(new CellSelectorEvents(this, this.selection));
+        this.eventManager.registerHandler(new RowResizerEvents(this, this.selection));
+        this.eventManager.registerHandler(new ColumnResizerEvents(this, this.selection));
         
         this.canvasContainer.setAttribute('tabindex', '0');
     }
@@ -191,7 +202,6 @@ export class ExcelGrid {
         if (horizontalHeader) horizontalHeader.querySelectorAll('.column-resizer').forEach(el => el.remove());
         if (verticalHeader) verticalHeader.querySelectorAll('.row-resizer').forEach(el => el.remove());
         
-        const startCol = Math.floor(this.scrollX / this.config.columnWidth);
         let colX = this.config.headerWidth - this.scrollX;
         let col = 0;
         while (colX < this.viewportWidth && col < this.currentColumns) {
@@ -200,7 +210,6 @@ export class ExcelGrid {
         }
         const endCol = Math.min(col, this.currentColumns);
 
-        const startRow = Math.floor(this.scrollY / this.config.rowHeight);
         let rowY = this.config.headerHeight - this.scrollY;
         let row = 0;
         while (rowY < this.viewportHeight && row < this.currentRows) {
@@ -261,129 +270,6 @@ export class ExcelGrid {
                     currentCollapseDiv.style.borderBottom = `1px solid #888`;
                 }
             }
-        }
-
-        this.setupResizeListeners();
-    }
-
-    /**
-     * Sets up event listeners for resize handles
-     */
-    setupResizeListeners() {
-        let isResizing = false;
-        let currentResizer = null;
-        let startX, startY, startWidth, startHeight;
-        let dashedLine = null;
-
-        const startResize = (e) => {
-            if (e.button === 1 || e.button === 2) return;
-
-            isResizing = true;
-            currentResizer = e.target;
-            startX = e.clientX;
-            startY = e.clientY;
-
-            if (currentResizer.classList.contains('column-resizer')) {
-                const colIndex = parseInt(currentResizer.dataset.colIndex);
-                startWidth = this.columns.get(colIndex)?.width || this.config.columnWidth;
-                
-                dashedLine = document.createElement('div');
-                dashedLine.style.position = 'absolute';
-                dashedLine.style.left = `${parseFloat(currentResizer.style.left)}px`;
-                dashedLine.style.top = `${this.config.headerHeight}px`;
-                dashedLine.style.width = '2px';
-                dashedLine.style.height = `${this.viewportHeight}px`;
-                dashedLine.style.borderLeft = `2px dashed ${this.config.resizerColor}`;
-                dashedLine.style.pointerEvents = 'none';
-                this.container.appendChild(dashedLine);
-            } else {
-                const rowIndex = parseInt(currentResizer.dataset.rowIndex);
-                startHeight = this.store.rows.get(rowIndex)?.height || this.config.rowHeight;
-                
-                dashedLine = document.createElement('div');
-                dashedLine.style.position = 'absolute';
-                dashedLine.style.left = `${this.config.headerWidth}px`;
-                dashedLine.style.top = `${parseFloat(currentResizer.style.top) + this.config.resizerSize / 2}px`;
-                dashedLine.style.width = `${this.viewportWidth}px`;
-                dashedLine.style.height = '2px';
-                dashedLine.style.borderTop = `2px dashed ${this.config.resizerColor}`;
-                dashedLine.style.pointerEvents = 'none';
-                this.container.appendChild(dashedLine);
-            }
-
-            document.addEventListener('pointermove', resize);
-            document.addEventListener('pointerup', stopResize);
-        };
-
-        const resize = (e) => {
-            if (e.button == 1 || e.button == 2 || !isResizing) return;
-            
-            if (currentResizer.classList.contains('column-resizer')) {
-                const deltaX = e.clientX - startX;
-                const colIndex = parseInt(currentResizer.dataset.colIndex);
-                const newWidth = Math.max(2, (startWidth + deltaX));
-                currentResizer.style.left = `${(startX + deltaX)}px`;
-                if (dashedLine && (e.clientX > (startX - startWidth))) {
-                    dashedLine.style.left = `${(startX + deltaX)}px`;
-                }
-                this.columns.get(colIndex).setWidth(newWidth);
-                this.headerRenderer.drawColumnHeaders();
-            } else {
-                const deltaY = e.clientY - startY;
-                const rowIndex = parseInt(currentResizer.dataset.rowIndex);
-                const newHeight = Math.max(2, startHeight + deltaY);
-                currentResizer.style.top = `${startY + deltaY}px`;
-                if (dashedLine && (e.clientY > (startY - startHeight))) {
-                    dashedLine.style.top = `${startY + deltaY}px`;
-                }
-                this.store.rows.get(rowIndex).setHeight(newHeight);
-                this.headerRenderer.drawRowHeaders();
-            }
-        };
-
-        const stopResize = (e) => {
-            if (e.button === 1 || e.button === 2)
-                return;
-                
-            let newWidth, newHeight;
-            if (currentResizer.classList.contains('column-resizer')) {
-                const colIndex = parseInt(currentResizer.dataset.colIndex);
-                const deltaX = e.clientX - startX;
-                newWidth = Math.max(2, (startWidth + deltaX));
-                this.columns.get(colIndex).setWidth(newWidth);
-            } else {
-                const rowIndex = parseInt(currentResizer.dataset.rowIndex);
-                const deltaY = e.clientY - startY;
-                newHeight = Math.max(2, startHeight + deltaY);
-                this.store.rows.get(rowIndex).setHeight(newHeight);
-            }
-
-            isResizing = false;
-            if (dashedLine) {
-                dashedLine.remove();
-                dashedLine = null;
-            }
-            document.removeEventListener('pointermove', resize);
-            document.removeEventListener('pointerup', stopResize);
-
-            this.updateScrollContent();
-            this.setupResizeHandles();
-            this.canvasPool.renderGridLines(); // Optimized: Redraw only grid lines and necessary content
-            this.headerRenderer.drawColumnHeaders();
-            this.headerRenderer.drawRowHeaders();
-        };
-
-        const horizontalHeader = document.querySelector('#horizontal-header');
-        const verticalHeader = document.querySelector('#vertical-header');
-        if (horizontalHeader) {
-            horizontalHeader.querySelectorAll('.column-resizer').forEach(resizer => {
-                resizer.addEventListener('pointerdown', startResize);
-            });
-        }
-        if (verticalHeader) {
-            verticalHeader.querySelectorAll('.row-resizer').forEach(resizer => {
-                resizer.addEventListener('pointerdown', startResize);
-            });
         }
     }
 
@@ -728,26 +614,5 @@ export class ExcelGrid {
         if (row >= this.currentRows || col >= this.currentColumns) 
             return null;
         return { row, col, address: `${this.columnNumberToLetter(col)}${row + 1}` };
-    }
-
-    /**
-     * Resets the grid to initial size
-     */
-    resetToInitial() {
-        this.currentRows = this.config.initialRows;
-        this.currentColumns = this.config.initialColumns;
-        this.maxReachedRow = this.config.initialRows;
-        this.maxReachedColumn = this.config.initialColumns;
-        this.store = new Store(this.config.initialRows, this.config.initialColumns);
-        this.columns.clear();
-        for (let col = 0; col < this.config.initialColumns; col++) {
-            this.columns.set(col, new Column(col, this.config.columnWidth));
-        }
-        this.updateScrollContent();
-        this.canvasContainer.scrollLeft = 0;
-        this.canvasContainer.scrollTop = 0;
-        this.selection.reset();
-        this.updateViewport();
-        this.render();
     }
 }
