@@ -1,3 +1,5 @@
+import { CommandManager } from "../command-pattern/CommandManager.js";
+
 export class EventManager {
 
     constructor(grid, selection) {
@@ -80,6 +82,17 @@ export class EventManager {
     keyDown(e) {
         if (this.selection.isEditing)
             return;
+
+        if (e.ctrlKey && (e.key === 'z' || e.key === 'Z')) {
+            e.preventDefault();
+            console.log("What's the problem?");
+            this.grid.commandManager.undo();
+            return;
+        } else if (e.ctrlKey && (e.key === 'y' || e.key === 'Y')) {
+            e.preventDefault();
+            this.grid.commandManager.redo();
+            return;
+        }
 
         this.startCell = this.selection.startCell;
         this.endCell = this.selection.endCell;

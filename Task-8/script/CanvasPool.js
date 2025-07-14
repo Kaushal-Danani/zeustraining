@@ -118,7 +118,7 @@ export class CanvasPool {
             }
             rowY += rowHeight;
         }
-        return {rowY, endRow, startRow};
+        return { rowY, endRow, startRow };
     }
 
     columnRangeOfTile(colX, endCol, tileStartX, startCol) {
@@ -131,7 +131,7 @@ export class CanvasPool {
             }
             colX += colWidth;
         }
-        return {colX, endCol, startCol};
+        return { colX, endCol, startCol };
     }
 
     renderTile(canvas, tileX, tileY) {
@@ -149,13 +149,13 @@ export class CanvasPool {
         let startRow = 0;
         let endRow = 0;
         let rowY = 0;
-        ({rowY, endRow, startRow} = this.rowRangeOfTile(rowY, endRow, tileStartY, startRow));
+        ({ rowY, endRow, startRow } = this.rowRangeOfTile(rowY, endRow, tileStartY, startRow));
         endRow = Math.min(endRow, this.grid.currentRows);
 
         let startCol = 0;
         let endCol = 0;
         let colX = 0;
-        ({colX, endCol, startCol} = this.columnRangeOfTile(colX, endCol, tileStartX, startCol));
+        ({ colX, endCol, startCol } = this.columnRangeOfTile(colX, endCol, tileStartX, startCol));
         endCol = Math.min(endCol, this.grid.currentColumns);
 
         for (let row = startRow; row < endRow; row++) {
@@ -174,7 +174,7 @@ export class CanvasPool {
             this.renderTile(canvas, tileX, tileY);
         });
         // Update previous selections cache
-        // this.previousSelections = new Set(this.grid.selection.selectedRanges.map(range => JSON.stringify(range)));
+        this.previousSelections = new Set(this.grid.selection.selectedRanges.map(range => JSON.stringify(range)));
     }
 
     /**
@@ -202,27 +202,27 @@ export class CanvasPool {
 
             const ctx = canvas.getContext('2d');
             if (colX >= -colWidth && colX <= this.tileSize && rowY >= -rowHeight && rowY <= this.tileSize) {
-                console.log("Cell Render:",row, col);
                 ctx.save();
                 ctx.beginPath();
-                ctx.rect(colX, rowY, colWidth, rowHeight);
-                ctx.clip();
-                // Clear the cell area
-                ctx.fillStyle = this.grid.config.colors.cellBg;
-                ctx.fillRect(colX, rowY, colWidth, rowHeight);
+
                 // Redraw grid lines within the cell
                 ctx.strokeStyle = this.grid.config.colors.gridLine;
                 ctx.lineWidth = 1 / window.devicePixelRatio;
                 ctx.beginPath();
                 if (colWidth > 5) {
-                    ctx.moveTo(colX + colWidth - 0.5, rowY);
+                    ctx.moveTo(colX - 0.5, rowY); // Left border
+                    ctx.lineTo(colX - 0.5, rowY + rowHeight);
+                    ctx.moveTo(colX + colWidth - 0.5, rowY); // Right border
                     ctx.lineTo(colX + colWidth - 0.5, rowY + rowHeight);
                 }
                 if (rowHeight > 5) {
-                    ctx.moveTo(colX, rowY + rowHeight - 0.5);
+                    ctx.moveTo(colX, rowY - 0.5); // Top border
+                    ctx.lineTo(colX + colWidth, rowY - 0.5);
+                    ctx.moveTo(colX, rowY + rowHeight - 0.5); // Bottom border
                     ctx.lineTo(colX + colWidth, rowY + rowHeight - 0.5);
                 }
                 ctx.stroke();
+
                 // Draw the cell value
                 this.tileRenderer.drawCellValue(canvas, tileX, tileY, row, col);
                 ctx.restore();
@@ -279,6 +279,7 @@ export class CanvasPool {
                 const padding = 4; // Extra padding to clear selection borders
                 ctx.rect(minX - padding, minY - padding, maxX - minX + 2 * padding, maxY - minY + 2 * padding);
                 ctx.clip();
+
                 // Clear the affected area
                 ctx.fillStyle = this.grid.config.colors.cellBg;
                 ctx.fillRect(minX - padding, minY - padding, maxX - minX + 2 * padding, maxY - minY + 2 * padding);
@@ -356,13 +357,13 @@ export class CanvasPool {
             let startRow = 0;
             let endRow = 0;
             let rowY = 0;
-            ({rowY, endRow, startRow} = this.rowRangeOfTile(rowY, endRow, tileStartY, startRow));
+            ({ rowY, endRow, startRow } = this.rowRangeOfTile(rowY, endRow, tileStartY, startRow));
             endRow = Math.min(endRow, this.grid.currentRows);
 
             let startCol = 0;
             let endCol = 0;
             let colX = 0;
-            ({colX, endCol, startCol} = this.columnRangeOfTile(colX, endCol, tileStartX, startCol));
+            ({ colX, endCol, startCol } = this.columnRangeOfTile(colX, endCol, tileStartX, startCol));
             endCol = Math.min(endCol, this.grid.currentColumns);
             
             if (!this.grid.selection.isEditing) {

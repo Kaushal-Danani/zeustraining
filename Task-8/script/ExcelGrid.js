@@ -10,6 +10,7 @@ import { RowSelectorEvents } from './events/RowSelectorEvents.js';
 import { ColumnSelectorEvents } from './events/ColumnSelectorEvents.js';
 import { RowResizerEvents } from './events/RowResizerEvents.js';
 import { ColumnResizerEvents } from './events/ColumnResizerEvents.js';
+import { CommandManager } from './command-pattern/CommandManager.js';
 
 /**
  * Main Excel Grid class with adaptive content loading
@@ -96,6 +97,9 @@ export class ExcelGrid {
         this.selection = new Selection(this, this.store, this.config, this.canvasContainer);
 
         this.eventManager = new EventManager(this, this.selection);
+
+        /** @type {CommandManager} Command manager for undo/redo */
+        this.commandManager = new CommandManager();
         
         /** @type {HeaderRenderer} Header renderer */
         this.headerRenderer = new HeaderRenderer(this);

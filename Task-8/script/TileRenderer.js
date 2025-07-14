@@ -77,10 +77,10 @@ export class TileRenderer {
             if (isSingleRowOrCol || range.type === 'cell-range' || range.type === 'cell') {
                 const mod = minCol % ((this.config.tileSize / this.config.columnWidth) - 1);
                 const rem = minCol / ((this.config.tileSize / this.config.columnWidth) - 1);
-                let offsetX = ((mod === 0 && rem !== 0) || mod === 1) ? 1 : -1;
+                let offsetX = ((mod === 0 && rem !== 0)) ? 1 : -1;
                 let handleOffsetX = mod === 1 ? -4 : (mod === 0 && rem !== 0) ? -6 : -3;
 
-                ctx.strokeRect(selLeft + offsetX, selTop - 1, selWidth - ((mod === 0 && rem !== 0) || mod === 1 ? 2 : -1), selHeight + 1);
+                ctx.strokeRect(selLeft + offsetX, selTop - 1, selWidth - ((mod === 0 && rem !== 0) ? 2 : -1), selHeight + 1);
                 ctx.fillStyle = handleFillStyle;
                 ctx.fillRect(selLeft + selWidth + handleOffsetX, selTop + selHeight - 3, 6, 6);
                 ctx.strokeStyle = 'white';
@@ -130,17 +130,17 @@ export class TileRenderer {
 
         if (colX >= -colWidth && colX <= this.tileSize && rowY >= -rowHeight && rowY <= this.tileSize) {
             const cell = this.grid.store.getCell(row, col);
-            if (cell.value && colWidth > 15) {
+            if (colWidth > 15) {
+                ctx.clearRect(colX+1, rowY + 2.5, colWidth - 3, rowHeight - 5);
                 ctx.save();
                 ctx.beginPath();
-                ctx.rect(colX, rowY, colWidth - 3, rowHeight);
+                ctx.rect(colX+1, rowY + 2.5, colWidth - 3, rowHeight - 5);
                 ctx.clip();
 
                 const canvasX = isNaN(cell.value) 
                     ? colX + 2 
                     : colX + colWidth - ctx.measureText(cell.value).width - 3;
                 const canvasY = rowY + rowHeight - 3;
-                console.log("Cell Value at:",canvasX, canvasY);
                 ctx.fillText(cell.value, canvasX, canvasY);
 
                 ctx.restore();

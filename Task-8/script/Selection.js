@@ -1,7 +1,9 @@
+import { CellValueCommand } from './command-pattern/CellValueCommand.js';
+
 /**
  * Manages cell selection in the grid
  */
- export class Selection {
+export class Selection {
     /**
      * Initializes the Selection object
      * @param {ExcelGrid} grid - Reference to the main ExcelGrid instance
@@ -34,14 +36,31 @@
     }
 
     saveValue = (row, col, range) => {
-        this.store.setCellValue(row, col, this.inputBox.value);
+        const oldValue = this.store.getCell(row, col).value;
+        const newValue = this.inputBox.value;
         this.isEditing = false;
         if (this.inputBox) {
             this.inputBox.remove();
             this.inputBox = null;
         }
-        this.rerenderSelectionChangeEffect(range);
-        this.grid.canvasPool.renderCell(row, col); // Optimized: Render only the cell value
+        if (oldValue !== newValue) {
+            const command = new CellValueCommand(this.store, row, col, newValue, oldValue, this.grid, range);
+            this.grid.commandManager.executeCommand(command);
+        } 
+
+        // Force focus back to canvas to ensure key events work
+        this.canvasContainer.focus();
+        this.preventFocusLoss();
+    };
+
+    preventFocusLoss = () => {
+        // Prevent focus from shifting away from canvas
+        this.canvasContainer.addEventListener('blur', (e) => {
+            if (!this.isEditing) {
+                e.preventDefault();
+                this.canvasContainer.focus();
+            }
+        }, { once: true });
     };
 
     /**
@@ -94,16 +113,34 @@
         this.inputBox.focus();
 
         this.inputBox.addEventListener('keydown', (e) => {
-            console.log('Keydown');
             if (e.key === 'Enter') {
                 this.saveValue(cell.row, cell.col, range);
+                // Keep selection on the same cell
+                this.selectedRanges = [{
+                    startRow: cell.row,
+                    startCol: cell.col,
+                    endRow: cell.row,
+                    endCol: cell.col,
+                    type: 'cell'
+                }];
             } else if (e.key === 'Escape') {
                 this.isEditing = false;
                 this.inputBox.value = '';
                 this.inputBox.remove();
                 this.inputBox = null;
+                this.canvasContainer.focus();
+                this.preventFocusLoss();
             } else if (e.key === 'Tab') {
                 this.saveValue(cell.row, cell.col, range);
+                const nextCol = cell.col + 1 < this.grid.currentColumns ? cell.col + 1 : cell.col;
+                this.selectedRanges = [{
+                    startRow: cell.row,
+                    startCol: nextCol,
+                    endRow: cell.row,
+                    endCol: nextCol,
+                    type: 'cell'
+                }];
+                this.grid.scrollToCell(cell.row, cell.row, nextCol, cell.col);
             }
         });
     }

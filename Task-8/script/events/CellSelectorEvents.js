@@ -16,7 +16,7 @@ export class CellSelectorEvents {
 
     pointerDown(e) {
         if (this.selection.isEditing) {
-            const range = this.selection.selectedRanges.find(r => r.startRow === this.startCell.row && r.startCol === this.startCell.col && r.endRow === this.endCell.row && r.endCol === this.endCell.col) || this.selectedRanges[0];
+            const range = this.selection.selectedRanges.find(r => r.startRow === this.startCell.row && r.startCol === this.startCell.col && r.endRow === this.endCell.row && r.endCol === this.endCell.col);
             this.selection.saveValue(this.startCell.row, this.startCell.col, range);
         }
 
