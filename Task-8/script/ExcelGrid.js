@@ -103,7 +103,6 @@ export class ExcelGrid {
         this.initializeCanvas();
         this.updateScrollContent();
         this.setupEventListeners();
-        // this.setupResizeHandles();
         this.updateViewport();
         this.render();
     }
@@ -159,7 +158,7 @@ export class ExcelGrid {
             
             this.checkAndAdaptContent();
             this.updateViewport();
-            this.canvasPool.renderTiles(); // Full redraw for scrolling
+            this.canvasPool.renderTiles();
             this.headerRenderer.drawColumnHeaders();
             this.headerRenderer.drawRowHeaders();
         });
@@ -178,7 +177,7 @@ export class ExcelGrid {
             this.initializeCanvas();
             this.updateScrollContent();
             this.updateViewport();
-            this.canvasPool.renderTiles(); // Full redraw for window resize
+            this.canvasPool.renderTiles();
             this.headerRenderer.drawColumnHeaders();
             this.headerRenderer.drawRowHeaders();
         });
@@ -238,9 +237,11 @@ export class ExcelGrid {
 
                 if (colWidth == 2) {
                     const currentCollapseDiv = document.querySelector(`div[data-col-index="${col-1}"]`);
-                    currentCollapseDiv.style.backgroundColor = 'white';
-                    currentCollapseDiv.style.borderLeft = `1px solid #888`;
-                    currentCollapseDiv.style.borderRight = `1px solid #888`;
+                    if (currentCollapseDiv) {
+                        currentCollapseDiv.style.backgroundColor = 'white';
+                        currentCollapseDiv.style.borderLeft = `1px solid #888`;
+                        currentCollapseDiv.style.borderRight = `1px solid #888`;
+                    }
                 }
             }
         }
@@ -265,9 +266,11 @@ export class ExcelGrid {
 
                 if (rowHeight == 2) {
                     const currentCollapseDiv = document.querySelector(`div[data-row-index="${row-1}"]`);
-                    currentCollapseDiv.style.backgroundColor = 'white';
-                    currentCollapseDiv.style.borderTop = `1px solid #888`;
-                    currentCollapseDiv.style.borderBottom = `1px solid #888`;
+                    if (currentCollapseDiv) {
+                        currentCollapseDiv.style.backgroundColor = 'white';
+                        currentCollapseDiv.style.borderTop = `1px solid #888`;
+                        currentCollapseDiv.style.borderBottom = `1px solid #888`;
+                    }
                 }
             }
         }
@@ -354,7 +357,7 @@ export class ExcelGrid {
         this.currentRows = newRowCount;
         this.updateScrollContent();
         this.updateViewport();
-        this.canvasPool.renderTiles(); // Full redraw for new rows
+        this.canvasPool.renderTiles();
         this.headerRenderer.drawRowHeaders();
         
         this.isLoadingRows = false;
@@ -383,7 +386,7 @@ export class ExcelGrid {
         }
         this.updateScrollContent();
         this.updateViewport();
-        this.canvasPool.renderTiles(); // Full redraw for new columns
+        this.canvasPool.renderTiles();
         this.headerRenderer.drawColumnHeaders();
         
         this.isLoadingColumns = false;
@@ -424,7 +427,7 @@ export class ExcelGrid {
             const newScrollTop = currentScrollRatio * container.scrollHeight;
             container.scrollTop = Math.max(0, newScrollTop);
             this.updateViewport();
-            this.canvasPool.renderTiles(); // Full redraw for row contraction
+            this.canvasPool.renderTiles();
             this.headerRenderer.drawRowHeaders();
             console.log(`Contracted rows. Current total: ${this.currentRows}`);
         }
@@ -447,7 +450,7 @@ export class ExcelGrid {
         let scrollColX = 0;
         let scrollCol = 0;
         while (scrollColX < container.scrollLeft && scrollCol < this.currentColumns) {
-            scrollColX = this.columns.get(scrollCol)?.width || this.config.columnWidth;
+            scrollColX += this.columns.get(scrollCol)?.width || this.config.columnWidth;
             scrollCol++;
         }
         
@@ -467,10 +470,101 @@ export class ExcelGrid {
             const newScrollLeft = currentScrollRatio * container.scrollWidth;
             container.scrollLeft = Math.max(0, newScrollLeft);
             this.updateViewport();
-            this.canvasPool.renderTiles(); // Full redraw for column contraction
+            this.canvasPool.renderTiles();
             this.headerRenderer.drawColumnHeaders();
             console.log(`Contracted columns. Current total: ${this.currentColumns}`);
         }
+    }
+
+    /**
+     * Computes statistics (count, sum, avg, min, max) for the selected cell range
+     * @returns {{count: number, sum: number|null, avg: number|null, min: number|null, max: number|null}} Statistics object
+     */
+    computeRangeStats() {
+        let count = 0;
+        const values = [];
+
+        // Iterate over all selected ranges
+        for (const range of this.selection.selectedRanges) {
+            const minRow = Math.min(range.startRow, range.endRow);
+            const maxRow = Math.max(range.startRow, range.endRow);
+            const minCol = Math.min(range.startCol, range.endCol);
+            const maxCol = Math.max(range.startCol, range.endCol);
+
+            // Collect values from cells in the range
+            for (let row = minRow; row <= maxRow; row++) {
+                for (let col = minCol; col <= maxCol; col++) {
+                    const cell = this.store.getCell(row, col);
+                    const value = cell.value;
+                    if (value !== '' && value !== null && value !== undefined) {
+                        count++;
+                        const numValue = parseFloat(value);
+                        if (!isNaN(numValue)) {
+                            values.push(numValue);
+                        }
+                    }
+                }
+            }
+        }
+
+        // If no values, return count with null for numeric stats
+        if (values.length === 0) {
+            return { count, sum: null, avg: null, min: null, max: null };
+        }
+
+        // Compute statistics for numeric values
+        const sum = values.reduce((acc, val) => acc + val, 0);
+        const avg = sum / values.length;
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+
+        return { count, sum, avg, min, max };
+    }
+
+    /**
+     * Updates the status bar with current grid information and selection statistics
+     */
+    updateStatusBar() {
+        const activeTiles = this.canvasPool.activeTiles.size;
+        let currentRow = 0;
+        let rowY = 0;
+        while (rowY < this.scrollY && currentRow < this.currentRows) {
+            rowY += this.store.rows.get(currentRow)?.height || this.config.rowHeight;
+            currentRow++;
+        }
+        currentRow = Math.min(currentRow, this.currentRows - 1) + 1;
+        
+        let currentCol = 0;
+        let colX = 0;
+        while (colX < this.scrollX && currentCol < this.currentColumns) {
+            colX += this.columns.get(currentCol)?.width || this.config.columnWidth;
+            currentCol++;
+        }
+        currentCol = Math.min(currentCol, this.currentColumns - 1);
+        
+        const selectionText = this.selection.getSelectionText(this.columnNumberToLetter.bind(this));
+        const textStatusbar = this.statusBar.querySelector('#status-bar-text');
+        const numericalStats = this.statusBar.querySelector('#status-bar-numerical-stats');
+
+        // Compute and append statistics for selected ranges
+        if (this.selection.selectedRanges.length > 0 && !this.selection.isEditing) {
+            // Check if the selection is a single cell
+            const isSingleCell = this.selection.selectedRanges.length === 1 &&
+                this.selection.selectedRanges[0].startRow === this.selection.selectedRanges[0].endRow &&
+                this.selection.selectedRanges[0].startCol === this.selection.selectedRanges[0].endCol;
+            
+            if (!isSingleCell) {
+                const stats = this.computeRangeStats();
+                if (stats.sum !== null) {
+                    numericalStats.textContent = `Count: ${stats.count} | Sum: ${stats.sum.toFixed(2)} | Avg: ${stats.avg.toFixed(2)} | Min: ${stats.min} | Max: ${stats.max}`;
+                }
+                else {
+                    numericalStats.textContent = `Count: ${stats.count}`;
+                }
+            }
+        }
+        
+        textStatusbar.textContent = `${selectionText} | Max Reached: ${this.maxReachedRow} rows × ${this.maxReachedColumn} cols | Active Tiles: ${activeTiles}`;
     }
 
     /**
@@ -498,32 +592,6 @@ export class ExcelGrid {
             colNum = Math.floor(colNum / 26) - 1;
         }
         return result;
-    }
-
-    /**
-     * Updates the status bar with current grid information
-     */
-    updateStatusBar() {
-        const activeTiles = this.canvasPool.activeTiles.size;
-        let currentRow = 0;
-        let rowY = 0;
-        while (rowY < this.scrollY && currentRow < this.currentRows) {
-            rowY += this.store.rows.get(currentRow)?.height || this.config.rowHeight;
-            currentRow++;
-        }
-        currentRow = Math.min(currentRow, this.currentRows - 1) + 1;
-        
-        let currentCol = 0;
-        let colX = 0;
-        while (colX < this.scrollX && currentCol < this.currentColumns) {
-            colX += this.columns.get(currentCol)?.width || this.config.columnWidth;
-            currentCol++;
-        }
-        currentCol = Math.min(currentCol, this.currentColumns - 1);
-        
-        const selectionText = this.selection.getSelectionText(this.columnNumberToLetter.bind(this));
-        
-        this.statusBar.textContent = `${selectionText} | Max Reached: ${this.maxReachedRow} rows × ${this.maxReachedColumn} cols | Active Tiles: ${activeTiles}`;
     }
 
     /**
@@ -582,8 +650,6 @@ export class ExcelGrid {
             targetX = (this.columns.get(col)?.width || this.config.columnWidth) + (currentColX - (Math.floor(this.canvasContainer.scrollLeft) + this.canvasContainer.clientWidth));
             this.canvasContainer.scrollLeft += targetX + 3;
         }
-        
-        // Scroll event will trigger renderTiles, drawColumnHeaders, and drawRowHeaders
     }
 
     /**

@@ -37,11 +37,27 @@ body {
 #status-bar {
     position: absolute;
     width: 100%;
+    display: flex;
     padding: 0.5rem;
     bottom: 0;
     z-index: 2;
     font-size: 12px;
+    font-family: Arial, Helvetica, sans-serif;
     background-color: rgb(193, 193, 193);
+}
+
+#status-bar-text {
+    width: 55%;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#status-bar-numerical-stats {
+    width: 45%;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #top-left-intersection {
