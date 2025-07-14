@@ -1,3 +1,5 @@
+import { RowResizeCommand } from "../command-pattern/RowResizeCommand.js";
+
 export class RowResizerEvents {
     
     constructor(grid, selection) {
@@ -50,6 +52,10 @@ export class RowResizerEvents {
         const deltaY = e.clientY - this.startY;
         const newHeight = Math.max(2, this.startHeight + deltaY);
         this.grid.store.rows.get(this.rowIndex).setHeight(newHeight);
+        if (newHeight !== this.startHeight) {
+            const command = new RowResizeCommand(this.grid, this.rowIndex, newHeight, this.startHeight);
+            this.grid.commandManager.executeCommand(command);
+        }
 
         if (this.dashedLine) {
             this.dashedLine.remove();

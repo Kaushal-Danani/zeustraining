@@ -1,3 +1,5 @@
+import { ColumnResizeCommand } from "../command-pattern/ColumnResizeCommand.js";
+
 export class ColumnResizerEvents {
 
     constructor(grid, selection) {
@@ -50,6 +52,10 @@ export class ColumnResizerEvents {
         const deltaX = e.clientX - this.startX;
         const newWidth = Math.max(2, this.startWidth + deltaX);
         this.grid.columns.get(this.colIndex).setWidth(newWidth);
+        if (newWidth !== this.startWidth) {
+            const command = new ColumnResizeCommand(this.grid, this.colIndex, newWidth, this.startWidth);
+            this.grid.commandManager.executeCommand(command);
+        }
 
         if (this.dashedLine) {
             this.dashedLine.remove();
