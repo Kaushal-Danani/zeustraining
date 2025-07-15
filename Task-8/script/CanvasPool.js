@@ -205,7 +205,7 @@ export class CanvasPool {
                 ctx.save();
                 ctx.beginPath();
                 ctx.clearRect(colX, rowY, colWidth, rowHeight);
-                
+
                 // Redraw grid lines within the cell
                 ctx.strokeStyle = this.grid.config.colors.gridLine;
                 ctx.lineWidth = 1;
@@ -333,7 +333,7 @@ export class CanvasPool {
                 }
 
                 // Draw all current selections
-                if (!this.grid.selection.isEditing) {
+                if (!this.grid.selection.isEditing && this.grid.selection.selectedRanges.length === 1) {
                     this.grid.selection.selectedRanges.forEach(selRange => {
                         this.tileRenderer.drawSelection(canvas, tileX, tileY, selRange);
                     });

@@ -93,6 +93,48 @@ export class TileRenderer {
                 const fillOffsetX = minCol % ((this.config.tileSize / this.config.columnWidth) - 1);
                 ctx.fillRect(selLeft + (fillOffsetX === 0 || fillOffsetX === 1 ? 2 : 0), selTop, selWidth - (fillOffsetX === 1 || fillOffsetX === 0 ? 4 : 1), selHeight - 1 );
             }
+
+            // // Draw active cell highlight
+            // if (this.grid.selection.activeCell && 
+            //     this.grid.selection.activeCell.row >= minRow && 
+            //     this.grid.selection.activeCell.row <= maxRow && 
+            //     this.grid.selection.activeCell.col >= minCol && 
+            //     this.grid.selection.activeCell.col <= maxCol) {
+            //     let activeLeft = -tileX * this.tileSize;
+            //     for (let col = 0; col < this.grid.selection.activeCell.col; col++) {
+            //         activeLeft += this.grid.columns.get(col)?.width || this.config.columnWidth;
+            //     }
+            //     let activeTop = -tileY * this.tileSize;
+            //     for (let row = 0; row < this.grid.selection.activeCell.row; row++) {
+            //         activeTop += this.grid.store.rows.get(row)?.height || this.config.rowHeight;
+            //     }
+            //     const activeWidth = this.grid.columns.get(this.grid.selection.activeCell.col)?.width || this.config.columnWidth;
+            //     const activeHeight = this.grid.store.rows.get(this.grid.selection.activeCell.row)?.height || this.config.rowHeight;
+
+            //     ctx.lineWidth = 1;
+            //     ctx.strokeRect(activeLeft+1, activeTop+1, activeWidth-4, activeHeight-4);
+            // }
+
+            // Draw anchor cell highlight
+            if (this.grid.selection.anchorCell && 
+                this.grid.selection.anchorCell.row >= minRow && 
+                this.grid.selection.anchorCell.row <= maxRow && 
+                this.grid.selection.anchorCell.col >= minCol && 
+                this.grid.selection.anchorCell.col <= maxCol) {
+                let anchorLeft = -tileX * this.tileSize;
+                for (let col = 0; col < this.grid.selection.anchorCell.col; col++) {
+                    anchorLeft += this.grid.columns.get(col)?.width || this.config.columnWidth;
+                }
+                let anchorTop = -tileY * this.tileSize;
+                for (let row = 0; row < this.grid.selection.anchorCell.row; row++) {
+                    anchorTop += this.grid.store.rows.get(row)?.height || this.config.rowHeight;
+                }
+                const anchorWidth = this.grid.columns.get(this.grid.selection.anchorCell.col)?.width || this.config.columnWidth;
+                const anchorHeight = this.grid.store.rows.get(this.grid.selection.anchorCell.row)?.height || this.config.rowHeight;
+
+                ctx.fillStyle = '#FFFFFF'; // White background for anchor cell
+                ctx.fillRect(anchorLeft+1, anchorTop+1, anchorWidth-3, anchorHeight-3);
+            }
         }
     }
 

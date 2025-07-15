@@ -80,8 +80,7 @@ export class CellSelectorEvents {
         const canvasRect = this.grid.canvasContainer.getBoundingClientRect();
         let x = this.lastCursorPos.x - canvasRect.left;
         let y = this.lastCursorPos.y - canvasRect.top;
-        let scrollX = this.grid.canvasContainer.scrollLeft;
-        let scrollY = this.grid.canvasContainer.scrollTop;
+        const cell = this.grid.getCurrentCell(x, y);
 
         if (this.lastCursorPos.x < canvasRect.left) {
             x = 0;
@@ -93,10 +92,6 @@ export class CellSelectorEvents {
         } else if (this.lastCursorPos.y > canvasRect.bottom) {
             y = canvasRect.height;
         }
-
-        const adjustedX = x + scrollX;
-        const adjustedY = y + scrollY;
-        const cell = this.grid.getCurrentCell(adjustedX, adjustedY);
 
         if (cell && (cell.row !== this.endCell?.row || cell.col !== this.endCell?.col)) {
             this.selection.store.clearSelections();
@@ -142,8 +137,8 @@ export class CellSelectorEvents {
         let scrollY = this.grid.canvasContainer.scrollTop;
         let scrollXDelta = 0;
         let scrollYDelta = 0;
-        const maxScrollSpeed = 20;
-        const edgeThreshold = 10;
+        const maxScrollSpeed = 18;
+        const edgeThreshold = 100;
 
         let outsideCanvas = false;
         if (this.lastCursorPos.x < canvasRect.left) {
