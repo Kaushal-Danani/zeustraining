@@ -11,7 +11,7 @@ export class TileRenderer {
         ctx.fillStyle = this.config.colors.cellBg;
         ctx.fillRect(0, 0, this.tileSize, this.tileSize);
         ctx.strokeStyle = this.config.colors.gridLine;
-        ctx.lineWidth = 1 / window.devicePixelRatio;
+        ctx.lineWidth = 1;
 
         let colX = -tileX * this.tileSize;
         ctx.beginPath();
@@ -102,10 +102,6 @@ export class TileRenderer {
         let fillStyle = selectRangeColor;
         let handleFillStyle = selectionBorder;
 
-        if (range.type === 'cell') {
-            fillStyle = 'rgba(255, 200, 200, 0.6)';
-        }
-
         return { borderStyle, fillStyle, handleFillStyle };
     }
 
@@ -131,7 +127,6 @@ export class TileRenderer {
         if (colX >= -colWidth && colX <= this.tileSize && rowY >= -rowHeight && rowY <= this.tileSize) {
             const cell = this.grid.store.getCell(row, col);
             if (colWidth > 15) {
-                ctx.clearRect(colX+1, rowY + 2.5, colWidth - 3, rowHeight - 5);
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(colX+1, rowY + 2.5, colWidth - 3, rowHeight - 5);

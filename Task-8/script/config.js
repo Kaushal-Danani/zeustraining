@@ -49,7 +49,7 @@
         headerHighlight: '#CAEBD8',
         headerHighlightBorder: '#137E41',
         headerSelectFill: '#107C41',
-        selectRangeColor: `rgba(232, 242, 236, 0.6)`
+        selectRangeColor: `rgba(19, 126, 67, 0.1)`
     },
     font: '12px Arial'
 };

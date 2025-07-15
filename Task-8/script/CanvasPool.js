@@ -190,11 +190,11 @@ export class CanvasPool {
 
             // Check if the cell is within the tile's bounds
             let colX = -tileStartX;
-            for (let c = 0; c <= col; c++) {
+            for (let c = 0; c < col; c++) {
                 colX += this.grid.columns.get(c)?.width || this.grid.config.columnWidth;
             }
             let rowY = -tileStartY;
-            for (let r = 0; r <= row; r++) {
+            for (let r = 0; r < row; r++) {
                 rowY += this.grid.store.rows.get(r)?.height || this.grid.config.rowHeight;
             }
             const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
@@ -204,10 +204,12 @@ export class CanvasPool {
             if (colX >= -colWidth && colX <= this.tileSize && rowY >= -rowHeight && rowY <= this.tileSize) {
                 ctx.save();
                 ctx.beginPath();
-
+                ctx.clearRect(colX, rowY, colWidth, rowHeight);
+                
                 // Redraw grid lines within the cell
                 ctx.strokeStyle = this.grid.config.colors.gridLine;
-                ctx.lineWidth = 1 / window.devicePixelRatio;
+                ctx.lineWidth = 1;
+                ctx.save();
                 ctx.beginPath();
                 if (colWidth > 5) {
                     ctx.moveTo(colX - 0.5, rowY); // Left border
@@ -284,13 +286,30 @@ export class CanvasPool {
                 ctx.fillStyle = this.grid.config.colors.cellBg;
                 ctx.fillRect(minX - padding, minY - padding, maxX - minX + 2 * padding, maxY - minY + 2 * padding);
 
-                // Redraw grid lines in the affected area
+                let rowY = -tileStartY;
                 let colX = -tileStartX;
+                for (let row = 0; row < this.grid.currentRows; row++) {
+                    const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
+                    if (rowY >= minY - rowHeight - padding && rowY <= maxY + padding) {
+                        colX = -tileStartX;
+                        for (let col = 0; col < this.grid.currentColumns; col++) {
+                            const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
+                            if (colX >= minX - colWidth - padding && colX <= maxX + padding) {
+                                ctx.clearRect(colX+1, rowY + 2.5, colWidth - 3, rowHeight - 5);
+                            }
+                            colX += colWidth;
+                        }
+                    }
+                    rowY += rowHeight;
+                }
+
+                // Redraw grid lines in the affected area
+                colX = -tileStartX;
                 for (let col = 0; col < this.grid.currentColumns; col++) {
                     const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
                     if (colX + colWidth >= minX - padding && colX + colWidth <= maxX + padding && colWidth > 5) {
                         ctx.strokeStyle = this.grid.config.colors.gridLine;
-                        ctx.lineWidth = 1 / window.devicePixelRatio;
+                        ctx.lineWidth = 1;
                         ctx.beginPath();
                         ctx.moveTo(colX + colWidth - 0.5, minY - padding);
                         ctx.lineTo(colX + colWidth - 0.5, maxY + padding);
@@ -299,12 +318,12 @@ export class CanvasPool {
                     colX += colWidth;
                 }
 
-                let rowY = -tileStartY;
+                rowY = -tileStartY;
                 for (let row = 0; row < this.grid.currentRows; row++) {
                     const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
                     if (rowY + rowHeight >= minY - padding && rowY + rowHeight <= maxY + padding && rowHeight > 5) {
                         ctx.strokeStyle = this.grid.config.colors.gridLine;
-                        ctx.lineWidth = 1 / window.devicePixelRatio;
+                        ctx.lineWidth = 1;
                         ctx.beginPath();
                         ctx.moveTo(minX - padding, rowY + rowHeight - 0.5);
                         ctx.lineTo(maxX + padding, rowY + rowHeight - 0.5);
