@@ -158,6 +158,8 @@ export class CanvasPool {
         ({ colX, endCol, startCol } = this.columnRangeOfTile(colX, endCol, tileStartX, startCol));
         endCol = Math.min(endCol, this.grid.currentColumns);
 
+        startRow = 0;
+        startCol = 0;
         for (let row = startRow; row < endRow; row++) {
             for (let col = startCol; col < endCol; col++) {
                 this.tileRenderer.drawCellValue(canvas, tileX, tileY, row, col);
@@ -333,14 +335,15 @@ export class CanvasPool {
                 }
 
                 // Draw all current selections
-                if (!this.grid.selection.isEditing && this.grid.selection.selectedRanges.length === 1) {
+                if (!this.grid.selection.isEditing) {
                     this.grid.selection.selectedRanges.forEach(selRange => {
-                        this.tileRenderer.drawSelection(canvas, tileX, tileY, selRange);
+                            this.tileRenderer.drawSelection(canvas, tileX, tileY, selRange);
                     });
                 }
 
                 // Redraw cell values in the affected area
                 rowY = -tileStartY;
+                colX = -tileStartX;
                 for (let row = 0; row < this.grid.currentRows; row++) {
                     const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
                     if (rowY >= minY - rowHeight - padding && rowY <= maxY + padding) {
@@ -391,6 +394,8 @@ export class CanvasPool {
                 });
             }
 
+            startRow = 0;
+            startCol = 0;
             for (let row = startRow; row < endRow; row++) {
                 for (let col = startCol; col < endCol; col++) {
                     this.tileRenderer.drawCellValue(canvas, tileX, tileY, row, col);

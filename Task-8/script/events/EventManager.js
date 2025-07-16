@@ -161,12 +161,10 @@ export class EventManager {
                         newCol = minCol + (prevIndex % (maxCol - minCol + 1));
                     } else {
                         newCol = this.selection.activeCell.col = Math.max(0, newCol - 1);
-                        console.log("Are u sure?", newCol);
                     }
                 }
                 else {
                     if (this.selection.selectedRanges.length > 0 && !isSingleCell) {
-                        const totalCells = (maxRow - minRow + 1) * (maxCol - minCol + 1);
                         let currentIndex = (activeRow - minRow) * (maxCol - minCol + 1) + (activeCol - minCol);
                         let nextIndex = (currentIndex + 1) % totalCells;
                         newRow = minRow + Math.floor(nextIndex / (maxCol - minCol + 1));
@@ -222,20 +220,21 @@ export class EventManager {
                     } else {
                         newRow = this.selection.activeCell.row = Math.max(0, newRow - 1);
                     }
-                }
-                if (this.selection.selectedRanges.length > 0 && !isSingleCell) {
-                    const range = this.selection.selectedRanges[0];
-                    const minRow = Math.min(range.startRow, range.endRow);
-                    const maxRow = Math.max(range.startRow, range.endRow);
-                    const minCol = Math.min(range.startCol, range.endCol);
-                    const maxCol = Math.max(range.startCol, range.endCol);
-                    const totalCells = (maxRow - minRow + 1) * (maxCol - minCol + 1);
-                    let currentIndex = (activeRow - minRow) * (maxCol - minCol + 1) + (activeCol - minCol);
-                    let nextIndex = (currentIndex + (maxCol - minCol + 1)) % totalCells;
-                    newRow = minRow + Math.floor(nextIndex / (maxCol - minCol + 1));
-                    newCol = minCol + (nextIndex % (maxCol - minCol + 1));
                 } else {
-                    newRow = this.selection.activeCell.row = Math.min(this.grid.currentRows - 1, newRow + 1);
+                    if (this.selection.selectedRanges.length > 0 && !isSingleCell) {
+                        const range = this.selection.selectedRanges[0];
+                        const minRow = Math.min(range.startRow, range.endRow);
+                        const maxRow = Math.max(range.startRow, range.endRow);
+                        const minCol = Math.min(range.startCol, range.endCol);
+                        const maxCol = Math.max(range.startCol, range.endCol);
+                        const totalCells = (maxRow - minRow + 1) * (maxCol - minCol + 1);
+                        let currentIndex = (activeRow - minRow) * (maxCol - minCol + 1) + (activeCol - minCol);
+                        let nextIndex = (currentIndex + (maxCol - minCol + 1)) % totalCells;
+                        newRow = minRow + Math.floor(nextIndex / (maxCol - minCol + 1));
+                        newCol = minCol + (nextIndex % (maxCol - minCol + 1));
+                    } else {
+                        newRow = this.selection.activeCell.row = Math.min(this.grid.currentRows - 1, newRow + 1);
+                    }
                 }
                 updateActiveCell = true;
                 break;
@@ -246,15 +245,15 @@ export class EventManager {
         if (updateActiveCell && (newRow !== activeRow || newCol !== activeCol) && !isSingleCell) {
             this.selection.setActiveCell(newRow, newCol);
             this.selection.setAnchorCell(newRow, newCol); // Move anchor cell with navigation
+            const range = { startRow: newRow, startCol: newCol, endRow: newRow, endCol: newCol, type: 'cell' };
             if (!this.isCellInSelectedRange(newRow, newCol)) {
                 this.selection.store.clearSelections();
-                const range = { startRow: newRow, startCol: newCol, endRow: newRow, endCol: newCol, type: 'cell' };
                 this.selection.selectedRanges = [range];
                 this.selection.setAnchorCell(newRow, newCol);
                 this.selection.store.setSelectionRange(newRow, newCol, newRow, newCol, true);   
             }
             this.grid.scrollToCell(newRow, activeRow, newCol, activeCol);
-            this.selection.rerenderSelectionChangeEffect({ startRow: newRow, startCol: newCol, endRow: newRow, endCol: newCol, type: 'cell' });
+            this.selection.rerenderSelectionChangeEffect(range);
         } else if (newRow === this.startCell.row && newCol === this.startCell.col) {
             return;
         }

@@ -29,12 +29,12 @@
     maxColumns: Number.MAX_SAFE_INTEGER,
     initialRows: 100,
     initialColumns: 20,
-    loadChunkRows: 20,
+    loadChunkRows: 100,
     loadChunkColumns: 8,
     tileSize: 800,
     loadThreshold: 0.8,
     contractThreshold: 0.2,
-    minBuffer: 10,
+    minBuffer: 80,
     resizerSize: 4, // Size of resize handle
     resizerColor: '#137E41', // Color for resize handle and dashed line
     colors: {

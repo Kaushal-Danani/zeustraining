@@ -111,7 +111,7 @@ export class Selection {
     }
 
     getSelectionText(columnNumberToLetter) {
-        if (!this.selectedRanges.length) return "";
+        if (!this.selectedRanges.length || this.selectedRanges.length > 1) return "";
         if (this.selectedRanges.length === 1) {
             const range = this.selectedRanges[0];
             if (range.startRow === range.endRow && range.startCol === range.endCol) {

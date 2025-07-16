@@ -138,7 +138,7 @@ export class CellSelectorEvents {
         let scrollXDelta = 0;
         let scrollYDelta = 0;
         const maxScrollSpeed = 18;
-        const edgeThreshold = 100;
+        const edgeThreshold = 1;
 
         let outsideCanvas = false;
         if (this.lastCursorPos.x < canvasRect.left) {

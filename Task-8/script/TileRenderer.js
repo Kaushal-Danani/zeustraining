@@ -74,7 +74,7 @@ export class TileRenderer {
             ctx.strokeStyle = borderStyle;
 
             const isSingleRowOrCol = (this.grid.selection.getSelectedRows().size === 1 || this.grid.selection.getSelectedColumns().size === 1) && (range.type === 'column' || range.type === 'row');
-            if (isSingleRowOrCol || range.type === 'cell-range' || range.type === 'cell') {
+            if (isSingleRowOrCol || range.type === 'cell-range' || (range.type === 'cell' && this.grid.selection.selectedRanges.length === 1)) {
                 const mod = minCol % ((this.config.tileSize / this.config.columnWidth) - 1);
                 const rem = minCol / ((this.config.tileSize / this.config.columnWidth) - 1);
                 let offsetX = ((mod === 0 && rem !== 0)) ? 1 : -1;
@@ -88,32 +88,11 @@ export class TileRenderer {
                 ctx.strokeRect(selLeft + selWidth + handleOffsetX, selTop + selHeight - 3, 6, 6);
             }
 
-            if (!(maxCol === minCol && maxRow === minRow)) {
+            if (!(maxCol === minCol && maxRow === minRow) || this.grid.selection.selectedRanges.length > 1) {
                 ctx.fillStyle = fillStyle;
                 const fillOffsetX = minCol % ((this.config.tileSize / this.config.columnWidth) - 1);
                 ctx.fillRect(selLeft + (fillOffsetX === 0 || fillOffsetX === 1 ? 2 : 0), selTop, selWidth - (fillOffsetX === 1 || fillOffsetX === 0 ? 4 : 1), selHeight - 1 );
             }
-
-            // // Draw active cell highlight
-            // if (this.grid.selection.activeCell && 
-            //     this.grid.selection.activeCell.row >= minRow && 
-            //     this.grid.selection.activeCell.row <= maxRow && 
-            //     this.grid.selection.activeCell.col >= minCol && 
-            //     this.grid.selection.activeCell.col <= maxCol) {
-            //     let activeLeft = -tileX * this.tileSize;
-            //     for (let col = 0; col < this.grid.selection.activeCell.col; col++) {
-            //         activeLeft += this.grid.columns.get(col)?.width || this.config.columnWidth;
-            //     }
-            //     let activeTop = -tileY * this.tileSize;
-            //     for (let row = 0; row < this.grid.selection.activeCell.row; row++) {
-            //         activeTop += this.grid.store.rows.get(row)?.height || this.config.rowHeight;
-            //     }
-            //     const activeWidth = this.grid.columns.get(this.grid.selection.activeCell.col)?.width || this.config.columnWidth;
-            //     const activeHeight = this.grid.store.rows.get(this.grid.selection.activeCell.row)?.height || this.config.rowHeight;
-
-            //     ctx.lineWidth = 1;
-            //     ctx.strokeRect(activeLeft+1, activeTop+1, activeWidth-4, activeHeight-4);
-            // }
 
             // Draw anchor cell highlight
             if (this.grid.selection.anchorCell && 
@@ -168,7 +147,7 @@ export class TileRenderer {
 
         if (colX >= -colWidth && colX <= this.tileSize && rowY >= -rowHeight && rowY <= this.tileSize) {
             const cell = this.grid.store.getCell(row, col);
-            if (colWidth > 15) {
+            if (cell && colWidth > 15) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(colX+1, rowY + 2.5, colWidth - 3, rowHeight - 5);

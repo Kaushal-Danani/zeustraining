@@ -156,25 +156,35 @@ export class ExcelGrid {
      */
     setupEventListeners() {
         // Main scroll event handler
-        this.canvasContainer.addEventListener('scroll', (e) => {
-            this.scrollX = Math.floor(e.target.scrollLeft);
-            this.scrollY = Math.floor(e.target.scrollTop);
-            
-            this.checkAndAdaptContent();
-            this.updateViewport();
-            this.canvasPool.renderTiles();
-            this.headerRenderer.drawColumnHeaders();
-            this.headerRenderer.drawRowHeaders();
-        });
+        // this.canvasContainer.addEventListener('scroll', (e) => {
+        //     if (this.scrollRaf)
+        //         cancelAnimationFrame(this.scrollRaf);
 
-        // Mouse wheel support
-        this.canvasContainer.addEventListener('wheel', (e) => {
-            const scrollLeft = this.canvasContainer.scrollLeft + e.deltaX;
-            const scrollTop = this.canvasContainer.scrollTop + e.deltaY;
-            
-            this.canvasContainer.scrollLeft = Math.max(0, scrollLeft);
-            this.canvasContainer.scrollTop = Math.max(0, scrollTop);
-        });
+        //     this.scrollRaf = requestAnimationFrame(() => {
+        //         this.scrollX = Math.floor(e.target.scrollLeft);
+        //         this.scrollY = Math.floor(e.target.scrollTop);
+                
+        //         this.checkAndAdaptContent();
+        //         this.updateViewport();
+        //         this.canvasPool.renderTiles();
+        //         this.headerRenderer.drawColumnHeaders();
+        //         this.headerRenderer.drawRowHeaders();
+        //     });
+        // });
+
+        // // Mouse wheel support
+        // this.canvasContainer.addEventListener('wheel', (e) => {
+        //     if (this.scrollRaf)
+        //         cancelAnimationFrame(this.scrollRaf);
+
+        //     this.scrollRaf = requestAnimationFrame(() => {
+        //         const scrollLeft = this.canvasContainer.scrollLeft + e.deltaX;
+        //         const scrollTop = this.canvasContainer.scrollTop + e.deltaY;
+                
+        //         this.canvasContainer.scrollLeft = Math.max(0, scrollLeft);
+        //         this.canvasContainer.scrollTop = Math.max(0, scrollTop);
+        //     });
+        // });
 
         // Window resize handler
         window.addEventListener('resize', () => {
@@ -330,7 +340,7 @@ export class ExcelGrid {
         }
         
         const verticalScrollPercentage = (container.scrollTop + container.clientHeight) / container.scrollHeight;
-        if (verticalScrollPercentage >= threshold && !this.isLoadingRows && this.currentRows < this.config.maxRows) {
+        if (verticalScrollPercentage >= threshold && this.currentRows < this.config.maxRows) {
             this.loadMoreRows();
         } else if (this.scrollY <= 0) {
             this.contractRows();
@@ -361,7 +371,7 @@ export class ExcelGrid {
         this.currentRows = newRowCount;
         this.updateScrollContent();
         this.updateViewport();
-        this.canvasPool.renderTiles();
+        // this.canvasPool.renderTiles();
         this.headerRenderer.drawRowHeaders();
         
         this.isLoadingRows = false;
@@ -499,12 +509,14 @@ export class ExcelGrid {
             for (let row = minRow; row <= maxRow; row++) {
                 for (let col = minCol; col <= maxCol; col++) {
                     const cell = this.store.getCell(row, col);
-                    const value = cell.value;
-                    if (value !== '' && value !== null && value !== undefined) {
-                        count++;
-                        const numValue = parseFloat(value);
-                        if (!isNaN(numValue)) {
-                            values.push(numValue);
+                    if (cell) {
+                        const value = cell.value;
+                        if (value !== '' && value !== null && value !== undefined) {
+                            count++;
+                            const numValue = parseFloat(value);
+                            if (!isNaN(numValue)) {
+                                values.push(numValue);
+                            }
                         }
                     }
                 }
@@ -519,8 +531,8 @@ export class ExcelGrid {
         // Compute statistics for numeric values
         const sum = values.reduce((acc, val) => acc + val, 0);
         const avg = sum / values.length;
-        const min = Math.min(...values);
-        const max = Math.max(...values);
+        const min = values.reduce((a, b) => Math.min(a, b), Infinity);
+        const max = values.reduce((a, b) => Math.max(a, b), -Infinity);
 
         return { count, sum, avg, min, max };
     }
