@@ -37,7 +37,6 @@ export class RowResizerEvents {
 
         const deltaY = e.clientY - this.startY;
         const newHeight = Math.max(2, this.startHeight + deltaY);
-        e.target.style.top = `${this.startY + deltaY}px`;
         if (this.dashedLine && (e.clientY > (this.startY - this.startHeight))) {
             this.dashedLine.style.top = `${this.startY + deltaY}px`;
         }

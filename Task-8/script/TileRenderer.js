@@ -7,11 +7,11 @@ export class TileRenderer {
 
     drawGridLines(canvas, tileX, tileY) {
         const ctx = canvas.getContext('2d');
+        ctx.lineWidth = 1 / window.devicePixelRatio;
         ctx.clearRect(0, 0, this.tileSize, this.tileSize);
         ctx.fillStyle = this.config.colors.cellBg;
         ctx.fillRect(0, 0, this.tileSize, this.tileSize);
         ctx.strokeStyle = this.config.colors.gridLine;
-        ctx.lineWidth = 1;
 
         let colX = -tileX * this.tileSize;
         ctx.beginPath();
@@ -112,7 +112,7 @@ export class TileRenderer {
                 const anchorHeight = this.grid.store.rows.get(this.grid.selection.anchorCell.row)?.height || this.config.rowHeight;
 
                 ctx.fillStyle = '#FFFFFF'; // White background for anchor cell
-                ctx.fillRect(anchorLeft+1, anchorTop+1, anchorWidth-3, anchorHeight-3);
+                ctx.fillRect(anchorLeft + 1, anchorTop + 1, anchorWidth - 3, anchorHeight - 3);
             }
         }
     }
@@ -150,7 +150,7 @@ export class TileRenderer {
             if (cell && colWidth > 15) {
                 ctx.save();
                 ctx.beginPath();
-                ctx.rect(colX+1, rowY + 2.5, colWidth - 3, rowHeight - 5);
+                ctx.rect(colX + 1, rowY + 2.5, colWidth - 3, rowHeight - 5);
                 ctx.clip();
 
                 const canvasX = isNaN(cell.value) 

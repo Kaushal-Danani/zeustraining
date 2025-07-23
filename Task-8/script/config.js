@@ -29,7 +29,7 @@
     maxColumns: Number.MAX_SAFE_INTEGER,
     initialRows: 100,
     initialColumns: 20,
-    loadChunkRows: 100,
+    loadChunkRows: 200,
     loadChunkColumns: 8,
     tileSize: 800,
     loadThreshold: 0.8,

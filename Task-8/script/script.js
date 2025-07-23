@@ -141,7 +141,7 @@ class ExtendedExcelGrid extends ExcelGrid {
             };
         }
 
-        // Use throttle instead of debounce for smoother scrolling
+        // Use throttle for smoother scrolling
         const throttledScroll = throttle(() => {
             this.scrollX = Math.floor(this.canvasContainer.scrollLeft);
             this.scrollY = Math.floor(this.canvasContainer.scrollTop);
@@ -151,7 +151,7 @@ class ExtendedExcelGrid extends ExcelGrid {
             this.headerRenderer.drawColumnHeaders();
             this.headerRenderer.drawRowHeaders();
             this.canvasPool.renderTiles();
-        }, 20);
+        }, 15);
 
         this.canvasContainer.addEventListener('scroll', throttledScroll);
 

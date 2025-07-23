@@ -59,7 +59,7 @@ export class HeaderRenderer {
         
         // Draw bottom border
         ctx.strokeStyle = config.colors.headerBorder;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1 / window.devicePixelRatio;
         ctx.beginPath();
         ctx.moveTo(0, config.headerHeight - 0.5);
         ctx.lineTo(window.innerWidth, config.headerHeight - 0.5);
@@ -165,7 +165,7 @@ export class HeaderRenderer {
         
         // Draw right border
         ctx.strokeStyle = config.colors.headerBorder;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1 / window.devicePixelRatio;
         ctx.beginPath();
         ctx.moveTo(config.headerWidth - 0.5, 0);
         ctx.lineTo(config.headerWidth - 0.5, window.innerHeight);
@@ -191,7 +191,6 @@ export class HeaderRenderer {
                 ctx.fillText(String(row+1), config.headerWidth - ctx.measureText(row+1).width - 5, rowY + rowHeight / 2);
                 
                 ctx.strokeStyle = config.colors.headerBorder;
-                ctx.lineWidth = 1 / window.devicePixelRatio;
                 ctx.beginPath();
                 ctx.moveTo(0, rowY + rowHeight - 0.5);
                 ctx.lineTo(config.headerWidth, rowY + rowHeight - 0.5);

@@ -213,7 +213,7 @@ export class CanvasPool {
 
                 // Redraw grid lines within the cell
                 ctx.strokeStyle = this.grid.config.colors.gridLine;
-                ctx.lineWidth = 1;
+                ctx.lineWidth = 1 / window.devicePixelRatio;
                 ctx.save();
                 ctx.beginPath();
                 if (colWidth > 5) {
@@ -309,34 +309,8 @@ export class CanvasPool {
                 }
 
                 // Redraw grid lines in the affected area
-                colX = -tileStartX;
-                for (let col = 0; col < this.grid.currentColumns; col++) {
-                    const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
-                    if (colX + colWidth >= minX - padding && colX + colWidth <= maxX + padding && colWidth > 5) {
-                        ctx.strokeStyle = this.grid.config.colors.gridLine;
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        ctx.moveTo(colX + colWidth - 0.5, minY - padding);
-                        ctx.lineTo(colX + colWidth - 0.5, maxY + padding);
-                        ctx.stroke();
-                    }
-                    colX += colWidth;
-                }
-
-                rowY = -tileStartY;
-                for (let row = 0; row < this.grid.currentRows; row++) {
-                    const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
-                    if (rowY + rowHeight >= minY - padding && rowY + rowHeight <= maxY + padding && rowHeight > 5) {
-                        ctx.strokeStyle = this.grid.config.colors.gridLine;
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        ctx.moveTo(minX - padding, rowY + rowHeight - 0.5);
-                        ctx.lineTo(maxX + padding, rowY + rowHeight - 0.5);
-                        ctx.stroke();
-                    }
-                    rowY += rowHeight;
-                }
-
+                this.tileRenderer.drawGridLines(canvas, tileX, tileY);
+                
                 // Draw all current selections
                 if (!this.grid.selection.isEditing) {
                     this.grid.selection.selectedRanges.forEach(selRange => {

@@ -1,5 +1,4 @@
 export class CellSelectorEvents {
-
     constructor(grid, selection) {
         this.grid = grid;
         this.selection = selection;
@@ -48,13 +47,18 @@ export class CellSelectorEvents {
             };
 
             if (e.ctrlKey) {
+                // Add new cell to selection without clearing others
                 this.selection.selectedRanges = this.selection.selectedRanges.filter(
                     r => r.startRow !== cell.row || r.startCol !== cell.col || r.endRow !== cell.row || r.endCol !== cell.col
                 );
                 this.selection.selectedRanges.push(range);
-            } else {    
+                // Update anchor cell to the newly selected cell
+                this.selection.updateAnchorForRange(range);
+            } else {
+                // Clear previous selections and start new one
                 this.selection.store.clearSelections();
                 this.selection.selectedRanges = [range];
+                this.selection.updateAnchorForRange(range);
             }
 
             this.selection.store.setSelectionRange(cell.row, cell.col, cell.row, cell.col, true);
@@ -112,6 +116,7 @@ export class CellSelectorEvents {
                 this.endCell.col,
                 true
             );
+            // this.selection.updateAnchorForRange(range);
             this.selection.rerenderSelectionChangeEffect(range);
         }
     }

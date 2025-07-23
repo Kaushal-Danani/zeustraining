@@ -45,9 +45,13 @@ export class Store {
         if (!rowObj) {
             const newRow = new Row(row, this.numColumns);
             this.rows.set(row, newRow);
-            return newRow.getCell(col);
         }
-        return rowObj.getCell(col);
+        let cell = rowObj.getCell(col);
+        if (!cell) {
+            cell = new Cell(row, col);
+            rowObj.cells.set(col, cell);
+        }
+        return cell;
     }
 
     /**

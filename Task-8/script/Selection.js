@@ -28,15 +28,17 @@ export class Selection {
         this.anchorCell = { row, col, address: `${this.grid.columnNumberToLetter(col)}${row + 1}` };
     }
 
-    rerenderSelectionChangeEffect = (range) => {
+    rerenderSelectionChangeEffect(range) {
         this.grid.updateStatusBar();
         this.grid.headerRenderer.drawColumnHeaders();
         this.grid.headerRenderer.drawRowHeaders();
         this.grid.canvasPool.renderSelection(range);
     }
 
-    saveValue = (row, col, range) => {
-        const oldValue = this.store.getCell(row, col).value;
+    saveValue(row, col, range) {
+        // Ensure the cell exists before accessing its value
+        let cell = this.store.getCell(row, col);
+        const oldValue = cell ? cell.value : '';
         const newValue = this.inputBox.value;
         this.isEditing = false;
         if (this.inputBox) {
@@ -50,43 +52,44 @@ export class Selection {
 
         this.canvasContainer.focus();
         this.preventFocusLoss();
-    };
+    }
 
-    preventFocusLoss = () => {
+    preventFocusLoss() {
         this.canvasContainer.addEventListener('blur', (e) => {
             if (!this.isEditing) {
                 e.preventDefault();
                 this.canvasContainer.focus();
             }
         }, { once: true });
-    };
+    }
 
     createInputBox(cell, initialValue = '') {
         let left = 0;
         for (let col = 0; col < cell.col; col++) {
             left += this.grid.columns.get(col)?.width || this.config.columnWidth;
         }
-        let width = this.grid.columns.get(cell.col)?.width || this.config.columnWidth; // Match cell width
+        let width = this.grid.columns.get(cell.col)?.width || this.config.columnWidth;
         let top = 0;
         for (let row = 0; row < cell.row; row++) {
             top += this.grid.store.rows.get(row)?.height || this.config.rowHeight;
         }
-        let height = this.grid.store.rows.get(cell.row)?.height || this.config.rowHeight; // Match cell height
+        let height = this.grid.store.rows.get(cell.row)?.height || this.config.rowHeight;
 
         this.inputBox = document.createElement('input');
         this.inputBox.type = 'text';
         this.inputBox.style.position = 'absolute';
         this.inputBox.style.margin = '0';
-        this.inputBox.style.width = `${width - 6}px`; // Exact cell width
-        this.inputBox.style.height = `${height-3}px`; // Exact cell height
+        this.inputBox.style.padding = '1.5px 3px 1.5px 3px'
+        this.inputBox.style.width = `${width + 3}px`;
+        this.inputBox.style.height = `${height + 3}px`;
         this.inputBox.style.background = '#FFFFFF';
-        this.inputBox.style.font = '16px Arial'; // Excel-like font
-        this.inputBox.style.color = '#000000'; // Black text
+        this.inputBox.style.font = '16px Arial';
+        this.inputBox.style.color = '#000000';
         this.inputBox.style.outline = 'none';
-        this.inputBox.style.border = 'none'; // No border
+        this.inputBox.style.border = `2px solid ${this.config.colors.selectionBorder}`;
         this.inputBox.style.zIndex = '1000';
-        this.inputBox.style.left = `${left+3}px`;
-        this.inputBox.style.top = `${top+1}px`;
+        this.inputBox.style.left = `${left - 2}px`;
+        this.inputBox.style.top = `${top - 2}px`;
         this.inputBox.value = initialValue || this.store.getCell(cell.row, cell.col).value || '';
         
         this.canvasContainer.appendChild(this.inputBox);
@@ -111,7 +114,9 @@ export class Selection {
     }
 
     getSelectionText(columnNumberToLetter) {
-        if (!this.selectedRanges.length || this.selectedRanges.length > 1) return "";
+        if (!this.selectedRanges.length || this.selectedRanges.length > 1) 
+            return "";
+        
         if (this.selectedRanges.length === 1) {
             const range = this.selectedRanges[0];
             if (range.startRow === range.endRow && range.startCol === range.endCol) {
@@ -119,7 +124,7 @@ export class Selection {
             }
             return `${columnNumberToLetter(range.startCol)}${range.startRow + 1}:${columnNumberToLetter(range.endCol)}${range.endRow + 1}`;
         }
-        return this.selection.selectedRanges.map(range => 
+        return this.selectedRanges.map(range => 
             `${columnNumberToLetter(range.startCol)}${range.startRow + 1}:${columnNumberToLetter(range.endCol)}${range.endRow + 1}`
         ).join(", ");
     }
@@ -146,5 +151,12 @@ export class Selection {
             }
         });
         return selectedColumns;
+    }
+
+    // Add method to update anchor cell for a new range
+    updateAnchorForRange(range) {
+        // Set the anchor cell to the start cell of the latest range
+        this.setAnchorCell(range.startRow, range.startCol);
+        this.setActiveCell(range.startRow, range.startCol);
     }
 }

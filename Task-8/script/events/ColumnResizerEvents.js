@@ -37,7 +37,6 @@ export class ColumnResizerEvents {
 
         const deltaX = e.clientX - this.startX;
         const newWidth = Math.max(2, this.startWidth + deltaX);
-        e.target.style.left = `${this.startX + deltaX}px`;
         if (this.dashedLine && (e.clientX > (this.startX - this.startWidth))) {
             this.dashedLine.style.left = `${this.startX + deltaX}px`;
         }

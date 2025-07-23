@@ -51,14 +51,15 @@ export class EventManager {
     pointerMove(e) {
         if (this.currHandler) {
             this.currHandler.pointerMove(e);
-        } else {
-            for (const handler of this.eventHandlers) {
-                if (handler.hitTest(e)) {
-                    // setCursor();
-                    break;
-                }
-            }
-        }
+        } 
+        // else {
+        //     for (const handler of this.eventHandlers) {
+        //         if (handler.hitTest(e)) {
+        //             // setCursor();
+        //             break;
+        //         }
+        //     }
+        // }
     }
 
     pointerUp(e) {
@@ -143,32 +144,35 @@ export class EventManager {
             return;
         }
 
+        const range = this.selection.selectedRanges[0];
+        const minRow = Math.min(range.startRow, range.endRow);
+        const maxRow = Math.max(range.startRow, range.endRow);
+        const minCol = Math.min(range.startCol, range.endCol);
+        const maxCol = Math.max(range.startCol, range.endCol);
+
         switch (e.key) {
             case 'Tab':
                 e.preventDefault();
-                const range = this.selection.selectedRanges[0];
-                const minRow = Math.min(range.startRow, range.endRow);
-                const maxRow = Math.max(range.startRow, range.endRow);
-                const minCol = Math.min(range.startCol, range.endCol);
-                const maxCol = Math.max(range.startCol, range.endCol);
-                const totalCells = (maxRow - minRow + 1) * (maxCol - minCol + 1);
-
                 if (e.shiftKey) {
                     if (this.selection.selectedRanges.length > 0 && !isSingleCell) {
-                        let currentIndex = (activeRow - minRow) * (maxCol - minCol + 1) + (activeCol - minCol);
-                        let prevIndex = (currentIndex - 1 + totalCells) % totalCells;
-                        newRow = minRow + Math.floor(prevIndex / (maxCol - minCol + 1));
-                        newCol = minCol + (prevIndex % (maxCol - minCol + 1));
+                        if (activeCol > minCol) {
+                            newCol = activeCol - 1;
+                        } else {
+                            newCol = maxCol;
+                            newRow = activeRow > minRow ? activeRow - 1 : maxRow;
+                        }
                     } else {
                         newCol = this.selection.activeCell.col = Math.max(0, newCol - 1);
                     }
                 }
                 else {
                     if (this.selection.selectedRanges.length > 0 && !isSingleCell) {
-                        let currentIndex = (activeRow - minRow) * (maxCol - minCol + 1) + (activeCol - minCol);
-                        let nextIndex = (currentIndex + 1) % totalCells;
-                        newRow = minRow + Math.floor(nextIndex / (maxCol - minCol + 1));
-                        newCol = minCol + (nextIndex % (maxCol - minCol + 1));
+                       if (activeCol < maxCol) {
+                            newCol = activeCol + 1;
+                        } else {
+                            newCol = minCol;
+                            newRow = activeRow < maxRow ? activeRow + 1 : minRow;
+                        }
                     } else {
                         newCol = this.selection.activeCell.col = Math.min(this.grid.currentColumns - 1, newCol + 1);
                     }
@@ -206,32 +210,30 @@ export class EventManager {
             case 'Enter':
                 e.preventDefault();
                 if (e.shiftKey) {
-                    const range = this.selection.selectedRanges[0];
-                    const minRow = Math.min(range.startRow, range.endRow);
-                    const maxRow = Math.max(range.startRow, range.endRow);
-                    const minCol = Math.min(range.startCol, range.endCol);
-                    const maxCol = Math.max(range.startCol, range.endCol);
-                    const totalCells = (maxRow - minRow + 1) * (maxCol - minCol + 1);
                     if (this.selection.selectedRanges.length > 0 && !isSingleCell) {
-                        let currentIndex = (activeRow - minRow) * (maxCol - minCol + 1) + (activeCol - minCol);
-                        let prevIndex = (currentIndex - (maxCol - minCol + 1) + totalCells) % totalCells;
-                        newRow = minRow + Math.floor(prevIndex / (maxCol - minCol + 1));
-                        newCol = minCol + (prevIndex % (maxCol - minCol + 1));
+                        if (activeRow > minRow) {
+                            newRow = activeRow - 1;
+                        } else if (activeCol > minCol) {
+                            newRow = maxRow;
+                            newCol = activeCol - 1;
+                        } else {
+                            newRow = maxRow;
+                            newCol = maxCol;
+                        }
                     } else {
                         newRow = this.selection.activeCell.row = Math.max(0, newRow - 1);
                     }
                 } else {
                     if (this.selection.selectedRanges.length > 0 && !isSingleCell) {
-                        const range = this.selection.selectedRanges[0];
-                        const minRow = Math.min(range.startRow, range.endRow);
-                        const maxRow = Math.max(range.startRow, range.endRow);
-                        const minCol = Math.min(range.startCol, range.endCol);
-                        const maxCol = Math.max(range.startCol, range.endCol);
-                        const totalCells = (maxRow - minRow + 1) * (maxCol - minCol + 1);
-                        let currentIndex = (activeRow - minRow) * (maxCol - minCol + 1) + (activeCol - minCol);
-                        let nextIndex = (currentIndex + (maxCol - minCol + 1)) % totalCells;
-                        newRow = minRow + Math.floor(nextIndex / (maxCol - minCol + 1));
-                        newCol = minCol + (nextIndex % (maxCol - minCol + 1));
+                        if (activeRow < maxRow) {
+                            newRow = activeRow + 1;
+                        } else if (activeCol < maxCol) {
+                            newRow = minRow;
+                            newCol = activeCol + 1;
+                        } else {
+                            newRow = minRow;
+                            newCol = minCol;
+                        }
                     } else {
                         newRow = this.selection.activeCell.row = Math.min(this.grid.currentRows - 1, newRow + 1);
                     }
