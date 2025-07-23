@@ -1,27 +1,6 @@
 import { ExcelGrid } from './ExcelGrid.js';
 import { Row } from './Row.js';
 
-// Utility function for throttling
-function throttle(func, limit) {
-    let lastFunc;
-    let lastRan;
-    return function(...args) {
-        const context = this;
-        if (!lastRan) {
-            func.apply(context, args);
-            lastRan = Date.now();
-        } else {
-            clearTimeout(lastFunc);
-            lastFunc = setTimeout(function() {
-                if ((Date.now() - lastRan) >= limit) {
-                    func.apply(context, args);
-                    lastRan = Date.now();
-                }
-            }, limit - (Date.now() - lastRan));
-        }
-    };
-}
-
 const firstNames = [
     "Raj", "Amit", "Priya", "Sneha", "Vikram", "Anjali", "Rahul", "Neha", 
     "Sanjay", "Pooja", "Arjun", "Kavita", "Rohan", "Shalini", "Vivek", "Meera"
@@ -52,24 +31,34 @@ class ExtendedExcelGrid extends ExcelGrid {
         super(container, config);
         this.records = records;
         this.loadedRecordCount = 0;
+        // Set grid reference in Store
+        this.store.setGrid(this);
         this.loadInitialRecords();
     }
 
     loadInitialRecords() {
         const headers = ['ID', 'First Name', 'Last Name', 'Age', 'Salary'];
-        for (let col = 0; col < headers.length; col++) {
-            this.store.setCellValue(0, col, headers[col]);
-        }
+        // Batch header updates
+        const headerValues = headers.map((header, col) => ({
+            row: 0,
+            col,
+            value: header
+        }));
+        this.store.setCellValues(headerValues);
 
-        const initialRows = Math.min(500, this.records.length); // Reduced initial rows
+        const initialRows = Math.min(500, this.records.length);
+        const cellValues = [];
         for (let row = 0; row < initialRows; row++) {
             const record = this.records[row];
-            this.store.setCellValue(row + 1, 0, record.id);
-            this.store.setCellValue(row + 1, 1, record.firstName);
-            this.store.setCellValue(row + 1, 2, record.lastName);
-            this.store.setCellValue(row + 1, 3, record.Age);
-            this.store.setCellValue(row + 1, 4, record.Salary);
+            cellValues.push(
+                { row: row + 1, col: 0, value: record.id },
+                { row: row + 1, col: 1, value: record.firstName },
+                { row: row + 1, col: 2, value: record.lastName },
+                { row: row + 1, col: 3, value: record.Age },
+                { row: row + 1, col: 4, value: record.Salary }
+            );
         }
+        this.store.setCellValues(cellValues);
 
         this.loadedRecordCount = initialRows;
         this.currentRows = Math.max(this.currentRows, initialRows + 1);
@@ -97,7 +86,7 @@ class ExtendedExcelGrid extends ExcelGrid {
 
         this.isLoadingRows = true;
 
-        const chunkSize = this.config.loadChunkRows || 200; // Smaller chunk size
+        const chunkSize = this.config.loadChunkRows || 200;
         const newRowCount = Math.min(
             this.currentRows + chunkSize,
             this.records.length + 1
@@ -105,6 +94,7 @@ class ExtendedExcelGrid extends ExcelGrid {
         const startRow = this.currentRows;
         const endRow = newRowCount - 1;
 
+        const cellValues = [];
         for (let row = startRow; row <= endRow; row++) {
             if (!this.store.rows.has(row)) {
                 this.store.rows.set(row, new Row(row, this.currentColumns));
@@ -112,13 +102,16 @@ class ExtendedExcelGrid extends ExcelGrid {
             const recordIndex = row - 1;
             if (recordIndex < this.records.length) {
                 const record = this.records[recordIndex];
-                this.store.setCellValue(row, 0, record.id);
-                this.store.setCellValue(row, 1, record.firstName);
-                this.store.setCellValue(row, 2, record.lastName);
-                this.store.setCellValue(row, 3, record.Age);
-                this.store.setCellValue(row, 4, record.Salary);
+                cellValues.push(
+                    { row, col: 0, value: record.id },
+                    { row, col: 1, value: record.firstName },
+                    { row, col: 2, value: record.lastName },
+                    { row, col: 3, value: record.Age },
+                    { row, col: 4, value: record.Salary }
+                );
             }
         }
+        this.store.setCellValues(cellValues);
 
         this.loadedRecordCount = endRow;
         this.currentRows = newRowCount;
@@ -136,38 +129,39 @@ class ExtendedExcelGrid extends ExcelGrid {
     setupEventListeners() {
         super.setupEventListeners();
 
-        this.canvasContainer.addEventListener('scroll', (e) => {
-             if (this.debounceTimeout) {
-                clearTimeout(this.debounceTimeout); // Clear previous timeout if any
-            }
+        // Utility: Throttle function
+        function throttle(callback, delay) {
+            let lastCall = 0;
+            return function (...args) {
+                const now = Date.now();
+                if (now - lastCall >= delay) {
+                lastCall = now;
+                callback.apply(this, args);
+                }
+            };
+        }
 
-            this.debounceTimeout = setTimeout(() => {
-                // Your scroll logic goes here
-                this.scrollX = Math.floor(e.target.scrollLeft);
-                this.scrollY = Math.floor(e.target.scrollTop);
+        // Use throttle instead of debounce for smoother scrolling
+        const throttledScroll = throttle(() => {
+            this.scrollX = Math.floor(this.canvasContainer.scrollLeft);
+            this.scrollY = Math.floor(this.canvasContainer.scrollTop);
 
-                // Check and adapt content, update viewport, render tiles, etc.
-                this.checkAndAdaptContent();
-                this.updateViewport();
-                this.headerRenderer.drawColumnHeaders();
-                this.headerRenderer.drawRowHeaders();
-                this.canvasPool.renderTiles();
-            }, 80);
-        });
+            this.checkAndAdaptContent();
+            this.updateViewport();
+            this.headerRenderer.drawColumnHeaders();
+            this.headerRenderer.drawRowHeaders();
+            this.canvasPool.renderTiles();
+        }, 20);
+
+        this.canvasContainer.addEventListener('scroll', throttledScroll);
 
         // Smooth wheel scrolling
         this.canvasContainer.addEventListener('wheel', (e) => {
-            if (this.debounceTimeout) {
-                clearTimeout(this.debounceTimeout); // Clear previous timeout if any
-            }
-
-            this.debounceTimeout = setTimeout(() => {
-                e.preventDefault(); // Stop default scrolling
-
-                // Adjust scroll position
-                this.canvasContainer.scrollLeft += deltaX;
-                this.canvasContainer.scrollTop += deltaY;
-            }, 80);
+            e.preventDefault();
+            const deltaX = e.deltaX;
+            const deltaY = e.deltaY;
+            this.canvasContainer.scrollLeft += deltaX;
+            this.canvasContainer.scrollTop += deltaY;
         });
     }
 }

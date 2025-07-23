@@ -18,6 +18,7 @@ export class CanvasPool {
         this.container = grid.canvasContainer;
         this.tileRenderer = new TileRenderer(grid, this.tileSize);
         this.previousSelections = new Set(); // Cache previous selection ranges
+        this.renderTimeout = null;
     }
 
     getTileKey(tileX, tileY) {
@@ -112,7 +113,7 @@ export class CanvasPool {
         for (let row = 0; row < this.grid.currentRows; row++) {
             const rowHeight = this.grid.store.rows.get(row)?.height || this.grid.config.rowHeight;
             if (rowY >= tileStartY - rowHeight && rowY <= tileStartY + this.tileSize) {
-                if (!startRow && rowY >= tileStartY)
+                if (startRow && rowY >= tileStartY)
                     startRow = row;
                 endRow = row + 1;
             }
@@ -125,7 +126,7 @@ export class CanvasPool {
         for (let col = 0; col < this.grid.currentColumns; col++) {
             const colWidth = this.grid.columns.get(col)?.width || this.grid.config.columnWidth;
             if (colX >= tileStartX - colWidth && colX <= tileStartX + this.tileSize) {
-                if (!startCol && colX >= tileStartX) 
+                if (startCol && colX >= tileStartX) 
                     startCol = col;
                 endCol = col + 1;
             }
@@ -158,8 +159,6 @@ export class CanvasPool {
         ({ colX, endCol, startCol } = this.columnRangeOfTile(colX, endCol, tileStartX, startCol));
         endCol = Math.min(endCol, this.grid.currentColumns);
 
-        startRow = 0;
-        startCol = 0;
         for (let row = startRow; row < endRow; row++) {
             for (let col = startCol; col < endCol; col++) {
                 this.tileRenderer.drawCellValue(canvas, tileX, tileY, row, col);
@@ -171,12 +170,16 @@ export class CanvasPool {
      * Re-renders all active tiles (used after major changes)
      */
     renderTiles() {
-        this.activeTiles.forEach((canvas, tileKey) => {
-            const [tileX, tileY] = tileKey.split('_').map(Number);
-            this.renderTile(canvas, tileX, tileY);
-        });
-        // Update previous selections cache
-        this.previousSelections = new Set(this.grid.selection.selectedRanges.map(range => JSON.stringify(range)));
+        if (this.renderTimeout) {
+            clearTimeout(this.renderTimeout);
+        }
+        this.renderTimeout = setTimeout(() => {
+            this.activeTiles.forEach((canvas, tileKey) => {
+                const [tileX, tileY] = tileKey.split('_').map(Number);
+                this.renderTile(canvas, tileX, tileY);
+            });
+            this.previousSelections = new Set(this.grid.selection.selectedRanges.map(range => JSON.stringify(range)));
+        }, 70);
     }
 
     /**

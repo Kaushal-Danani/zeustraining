@@ -72,6 +72,7 @@ body {
     top: 0;
     left: 0;
     z-index: 1;
+    will-change: transform;
 }
 
 #vertical-header {
@@ -79,6 +80,7 @@ body {
     top: 0%;
     left: 0%;
     z-index: 1;
+    will-change: transform;
 }
 
 #resizer {

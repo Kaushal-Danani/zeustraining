@@ -155,7 +155,7 @@ export class ExcelGrid {
      * Sets up all event listeners for user interaction
      */
     setupEventListeners() {
-        // Main scroll event handler
+        // // Main scroll event handler
         // this.canvasContainer.addEventListener('scroll', (e) => {
         //     if (this.scrollRaf)
         //         cancelAnimationFrame(this.scrollRaf);

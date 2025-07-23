@@ -21,6 +21,17 @@ export class Store {
         for (let row = 0; row < initialRows; row++) {
             this.rows.set(row, new Row(row, initialColumns));
         }
+
+        /** @type {ExcelGrid} Reference to the grid instance */
+        this.grid = null; // Will be set by ExcelGrid
+    }
+
+    /**
+     * Sets the grid reference
+     * @param {ExcelGrid} grid - The ExcelGrid instance
+     */
+    setGrid(grid) {
+        this.grid = grid;
     }
 
     /**
@@ -44,11 +55,31 @@ export class Store {
      * @param {number} row - Row index
      * @param {number} col - Column index
      * @param {any} value - Cell value
+     * @param {boolean} [suppressRender=false] - If true, suppresses rendering
      */
-    setCellValue(row, col, value) {
+    setCellValue(row, col, value, suppressRender = false) {
         const rowObj = this.rows.get(row) || new Row(row, this.numColumns);
         rowObj.setCellValue(col, value);
         this.rows.set(row, rowObj);
+        if (!suppressRender && this.grid) {
+            this.grid.canvasPool.renderCell(row, col);
+        }
+    }
+
+    /**
+     * Sets multiple cell values in a batch
+     * @param {Array<{row: number, col: number, value: any}>} values - Array of cell updates
+     * @param {boolean} [suppressRender=true] - If true, renders all affected tiles once after updates
+     */
+    setCellValues(values, suppressRender = true) {
+        for (const { row, col, value } of values) {
+            const rowObj = this.rows.get(row) || new Row(row, this.numColumns);
+            rowObj.setCellValue(col, value);
+            this.rows.set(row, rowObj);
+        }
+        if (suppressRender && this.grid) {
+            this.grid.canvasPool.renderTiles();
+        }
     }
 
     /**
