@@ -9,6 +9,7 @@ export class EventManager {
         this.startCell = null;
         this.endCell = null;
 
+        this.isShiftSelectionActive = false;
         this.setupEventListeners();
     }
 
@@ -18,7 +19,7 @@ export class EventManager {
         window.addEventListener('pointermove', (e) => this.pointerMove(e));
         window.addEventListener('pointerup', (e) => this.pointerUp(e));
         canvasContainer.addEventListener('dblclick', (e) => this.dblclick(e));
-        canvasContainer.addEventListener('keydown', (e) => this.keyDown(e));
+        window.addEventListener('keydown', (e) => this.keyDown(e));
     }
 
     registerHandler(handler) {
@@ -150,6 +151,32 @@ export class EventManager {
         const minCol = Math.min(range.startCol, range.endCol);
         const maxCol = Math.max(range.startCol, range.endCol);
 
+        // Helper for shift+arrow selection expansion
+        const expandSelection = (direction) => {
+            this.isShiftSelectionActive = true;
+            let anchor = this.selection.anchorCell || this.selection.activeCell;
+            let endRow = this.selection.selectedRanges[0].endRow;
+            let endCol = this.selection.selectedRanges[0].endCol;
+            switch (direction) {
+                case 'up': endRow = Math.max(0, endRow - 1); break;
+                case 'down': endRow = Math.min(this.grid.currentRows - 1, endRow + 1); break;
+                case 'left': endCol = Math.max(0, endCol - 1); break;
+                case 'right': endCol = Math.min(this.grid.currentColumns - 1, endCol + 1); break;
+            }
+            let range = {
+                startRow: anchor.row,
+                startCol: anchor.col,
+                endRow,
+                endCol,
+                type: 'cell-range'
+            };
+            this.selection.selectedRanges = [range];
+            this.selection.store.setSelectionRange(anchor.row, anchor.col, endRow, endCol, true);
+            console.log(endRow, activeRow, endCol, activeCol);
+            this.grid.scrollToCell(endRow, activeRow, endCol, activeCol);
+            this.selection.rerenderSelectionChangeEffect(range);
+        };
+
         switch (e.key) {
             case 'Tab':
                 e.preventDefault();
@@ -181,30 +208,42 @@ export class EventManager {
                 break;
             case 'ArrowUp':
                 e.preventDefault();
-                if (isSingleCell) {
+                if (e.shiftKey) {
+                    expandSelection('up');
+                } else if (isSingleCell || this.isShiftSelectionActive) {
                     newRow = this.selection.activeCell.row = Math.max(0, newRow - 1);
                     updateActiveCell = true;
+                    this.isShiftSelectionActive = false;
                 }
                 break;
             case 'ArrowDown':
                 e.preventDefault();
-                if (isSingleCell) {
+                if (e.shiftKey) {
+                    expandSelection('down');
+                } else if (isSingleCell || this.isShiftSelectionActive) {
                     newRow = this.selection.activeCell.row = Math.min(this.grid.currentRows - 1, newRow + 1);
                     updateActiveCell = true;
+                    this.isShiftSelectionActive = false;
                 }
                 break;
             case 'ArrowLeft':
                 e.preventDefault();
-                if (isSingleCell) {
+                if (e.shiftKey) {
+                    expandSelection('left');
+                } else if (isSingleCell || this.isShiftSelectionActive) {
                     newCol = this.selection.activeCell.col = Math.max(0, newCol - 1);
                     updateActiveCell = true;
+                    this.isShiftSelectionActive = false;
                 }
                 break;
             case 'ArrowRight':
                 e.preventDefault();
-                if (isSingleCell) {
+                if (e.shiftKey) {
+                    expandSelection('right');
+                } else if (isSingleCell || this.isShiftSelectionActive) {
                     newCol = this.selection.activeCell.col = Math.min(this.grid.currentColumns - 1, newCol + 1);
                     updateActiveCell = true;
+                    this.isShiftSelectionActive = false;
                 }
                 break;
             case 'Enter':

@@ -203,7 +203,59 @@ export class ExcelGrid {
         this.eventManager.registerHandler(new ColumnResizerEvents(this, this.selection));
         
         this.canvasContainer.setAttribute('tabindex', '0');
+
+        // Expose the instance globally for testing
+        window._excelGrid = this;
     }
+
+    getCurrentCell(x, y) {
+        return super.getCurrentCell(x, y);
+    }
+
+    scrollToCell(row, oldRow, col, oldCol) {
+        return super.scrollToCell(row, oldRow, col, oldCol);
+    }
+
+    updateViewport() {
+        return super.updateViewport();
+    }
+
+    checkAndAdaptContent() {
+        return super.checkAndAdaptContent();
+    }
+
+    loadMoreRows() {
+        return super.loadMoreRows();
+    }
+
+    loadMoreColumns() {
+        return super.loadMoreColumns();
+    }
+
+    contractRows() {
+        return super.contractRows();
+    }
+
+    contractColumns() {
+        return super.contractColumns();
+    }
+
+    computeRangeStats() {
+        return super.computeRangeStats();
+    }
+
+    updateStatusBar() {
+        return super.updateStatusBar();
+    }
+
+    columnNumberToLetter(colNum) {
+        return super.columnNumberToLetter(colNum);
+    }
+
+    render() {
+        return super.render();
+    }
+
 
     /**
      * Sets up resize handles for columns and rows on header containers
@@ -666,6 +718,11 @@ export class ExcelGrid {
             targetX = (this.columns.get(col)?.width || this.config.columnWidth) + (currentColX - (Math.floor(this.canvasContainer.scrollLeft) + this.canvasContainer.clientWidth));
             this.canvasContainer.scrollLeft += targetX + 3;
         }
+
+        if (currentColX < this.canvasContainer.scrollLeft)
+            this.canvasContainer.scrollLeft -= this.config.tileSize-100;
+        else if (currentRowY <  this.canvasContainer.scrollTop)
+            this.canvasContainer.scrollTop -= this.config.tileSize-100;
     }
 
     /**
